@@ -1,0 +1,33 @@
+model:
+  model_name: "energy_based_learning.pth"
+  steps: 1
+  alpha: 300 # 1/steps
+
+memory:
+  num_workers: 8
+
+training:
+  # Optimization
+  learning_rate: 6.4e-5
+  weight_decay: 0.01
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0 # don't do massive updates
+
+  # Training Params
+  epochs: 3
+  checkpoint_dir: "./checkpoints"
+  save_steps: 500
+  num_episodes: 10000
+  batch_size: 8
+  print_every: 4
+
+inference:
+  samples: 8
+
+wandb:
+  project: "EBM"
+  entity: "eshaanb"
+  name: "EBM"
+  notes: "EBM"
+
+# api key: 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

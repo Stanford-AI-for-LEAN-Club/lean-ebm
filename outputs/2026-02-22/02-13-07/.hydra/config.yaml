@@ -1,0 +1,24 @@
+model:
+  model_name: energy_based_learning.pth
+  steps: 1
+  alpha: 300
+memory:
+  num_workers: 8
+training:
+  learning_rate: 6.4e-05
+  weight_decay: 0.01
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+  epochs: 3
+  checkpoint_dir: ./checkpoints
+  save_steps: 500
+  num_episodes: 10000
+  batch_size: 8
+  print_every: 4
+inference:
+  samples: 8
+wandb:
+  project: EBM
+  entity: eshaanb
+  name: EBM
+  notes: EBM
