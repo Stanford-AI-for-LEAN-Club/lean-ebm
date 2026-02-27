@@ -1,5 +1,6 @@
 from trainer import Trainer
 from model import CNN
+from contrastive import ContrastiveLearning
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
@@ -13,7 +14,6 @@ def main(cfg: DictConfig):
     torch.set_printoptions(sci_mode=False, precision=5)
 
     # NNIST Dataset
-    #mnist_mean = (0.1307,)
     dataset = datasets.MNIST(
         root='../../4D-Dyn/flow-matching-mnist/data/', 
         train=True, 
@@ -30,8 +30,10 @@ def main(cfg: DictConfig):
         return Subset(dataset, indices)
     dataset = get_digit_loader(dataset, 8)
 
-    #trainer = trainer(CNN, )
-    trainer = Trainer(model=CNN(conf), config=conf)
+    trainer = Trainer(
+        model=ContrastiveLearning(CNN(conf), conf),
+        config=conf
+    )
 
     dl = DataLoader(
         dataset, 
