@@ -12,7 +12,6 @@ ebt:
   steps: 60
   alpha: 10
 
-
 memory:
   num_workers: 8
 

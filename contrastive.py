@@ -61,8 +61,7 @@ class ContrastiveLearning (nn.Module):
         noise_scale=0.005,      # we add a small noise scale
         record_energy=False     # whehter to record the energy over time
     ):
-        x_init = torch.randn(num_samples, 1, 28, 28).to(self.device)
-        x_sample = x_init.detach().requires_grad_(True)
+        x_sample = torch.randn(num_samples, 1, 28, 28, requires_grad=True).to(self.device)
         energy_history = []
         
         for _ in range(steps):

@@ -1,11 +1,14 @@
 from trainer import Trainer
 from model import CNN
-from contrastive import ContrastiveLearning
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Subset
 import torch
+
+# different training methods
+from contrastive import ContrastiveLearning
+from ebt import EBTTrainer
 
 @hydra.main(version_base=None, config_path="./", config_name="config")
 def main(cfg: DictConfig):
@@ -31,7 +34,7 @@ def main(cfg: DictConfig):
     dataset = get_digit_loader(dataset, 8)
 
     trainer = Trainer(
-        model=ContrastiveLearning(CNN(conf), conf),
+        model=EBTTrainer(CNN(conf), conf),
         config=conf
     )
 
