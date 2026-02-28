@@ -27,7 +27,7 @@ class EBTTrainer (nn.Module):
             (x[0][0].cpu().detach().numpy() + 1)/2*255
         )
 
-    def forward(self, x):
+    def forward(self, x): # x is the "actual" or "desired input"; the 8 digit
         x = x.to(self.device)
         x_fake, reg_loss, en = self.sample_langevin(
             num_samples=x.size(0),
@@ -43,6 +43,9 @@ class EBTTrainer (nn.Module):
             self._save_fake_real_imgs(x, x_fake)
 
         total_loss = F.mse_loss(x_fake, x) + reg_loss
+        
+        
+        
         return total_loss, {
             "last_energy": en[-1]
         }
