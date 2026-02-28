@@ -13,6 +13,7 @@ class EBTTrainer (nn.Module):
 
         self.steps = conf.ebt.steps
         self.alpha = conf.ebt.alpha
+        self.reg_coef = conf.ebt.reg_coef
         
         self.model.to(self.device) # put model to device
     
@@ -28,20 +29,21 @@ class EBTTrainer (nn.Module):
 
     def forward(self, x):
         x = x.to(self.device)
-        x_fake, en = self.sample_langevin(
+        x_fake, reg_loss, en = self.sample_langevin(
             num_samples=x.size(0),
             steps=self.steps, 
             step_size=self.alpha,
             record_energy=True,
-            full_gradient=True, # only include the gradient for the last step
-            noise_scale=0
+            full_gradient=False, # only include the gradient for the last step
+            noise_scale=0,
+            training=False
         )
 
         if randint(1, 10) == 1:
             self._save_fake_real_imgs(x, x_fake)
 
-        reconstruction_loss = F.mse_loss(x_fake, x)
-        return reconstruction_loss, {
+        total_loss = F.mse_loss(x_fake, x) + reg_loss
+        return total_loss, {
             "last_energy": en[-1]
         }
     
@@ -54,24 +56,27 @@ class EBTTrainer (nn.Module):
         step_size,              # step size
         noise_scale=0.005,      # we add a small noise scale
         record_energy=False,    # whehter to record the energy over time
-        full_gradient=True # True if we only include parameter gradeints for the last step; False if we include it for all
+        full_gradient=True, # True if we only include parameter gradeints for the last step; False if we include it for all
+        training=False      # If true, then we create the graph. Else no
     ):
         x_sample = torch.randn(num_samples, 1, 28, 28, requires_grad=True).to(self.device)
         x_sample.retain_grad()
         energy_history = []
+        l = torch.tensor(0).to(self.device)
         
         for i in range(steps):
             # clear all gradients with the model; this is just for sampling
             # 1. Forward pass to get energy
             energy = self.model(x_sample)
             
-            if i == steps-1 or full_gradient:
+            if (i == steps-1 or full_gradient) and training:
                 grads = torch.autograd.grad(energy.sum(), x_sample, create_graph=True)[0]
                 noise = torch.randn_like(x_sample) * noise_scale
                 x_sample = torch.clamp(
                     x_sample - (0.5 * step_size * grads) + noise,
                     -1, 1
                 )
+                l = l + self.reg_coef * (energy**2).mean()
             else:
                 grads = torch.autograd.grad(energy.sum(), x_sample)[0]
                 noise = torch.randn_like(x_sample) * noise_scale
@@ -83,6 +88,7 @@ class EBTTrainer (nn.Module):
                 energy_history.append(energy.mean().cpu().item())
             
         if record_energy:
-            return x_sample, energy_history
+            return x_sample, l, energy_history
         else:
-            return x_sample
+            # training
+            return x_sample, l
