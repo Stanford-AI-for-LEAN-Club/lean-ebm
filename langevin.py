@@ -93,7 +93,7 @@ class LangevinTrainer (nn.Module):
                 energy.sum(), 
                 x_sample, 
                 create_graph=should_create_graph,
-                retain_graph=False
+                retain_graph=should_create_graph
             )[0]
             
             # Update x_sample

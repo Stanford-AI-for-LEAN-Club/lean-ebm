@@ -18,16 +18,6 @@ class EBTTrainer (LangevinTrainer):
         
         self.model.to(self.device) # put model to device
     
-    def _save_fake_real_imgs (self, x, x_fake):
-        cv2.imwrite(
-            "test.png",
-            (x_fake[0][0].cpu().detach().numpy() + 1)/2*255
-        ) 
-        cv2.imwrite(
-            "real.png",
-            (x[0][0].cpu().detach().numpy() + 1)/2*255
-        )
-
     def forward(self, x): # x is the "actual" or "desired input"; the 8 digit
         x = x.to(self.device)
         x_fake, extra = self.sample_langevin(
