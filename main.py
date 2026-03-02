@@ -18,7 +18,7 @@ def main(cfg: DictConfig):
 
     # NNIST Dataset
     dataset = datasets.MNIST(
-        root='../../4D-Dyn/flow-matching-mnist/data/', 
+        root='../4D-Dyn/flow-matching-mnist/data/', 
         train=True, 
         transform=transforms.Compose([
             transforms.ToTensor(),

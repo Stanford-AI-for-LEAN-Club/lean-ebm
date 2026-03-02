@@ -27,7 +27,7 @@ class StopEnergyGradient:
     max_steps:int
     threshold:float
    
-StopMethod = Union[StopStep, GradientMethod] 
+StopMethod = Union[StopStep, StopEnergyGradient] 
 
 class LangevinTrainer (nn.Module):
     def __init__(self, *args, **kwargs):
@@ -47,7 +47,7 @@ class LangevinTrainer (nn.Module):
     def sample_langevin (
         self, 
         num_samples,                    # number of samples to generate
-        condition,                      # the condition to use
+        condition,                      # the condition to use (num_samples, [condition_size])
         step_size,                      # step size
         device,                         # what device to run on
         gradient_method:GradientMethod, # what Gradient method to use
@@ -56,6 +56,7 @@ class LangevinTrainer (nn.Module):
         ret_extra=False,                # returns extra information like energy and num steps
     ):
         # prepare x sample
+        condition = condition.to(device)
         x_sample = torch.randn(num_samples, 1, 28, 28, requires_grad=True).to(device)
         x_sample.retain_grad() 
         

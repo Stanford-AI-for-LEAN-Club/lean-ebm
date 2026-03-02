@@ -10,4 +10,5 @@ dependencies = [
     "omegaconf>=2.3.0",
     "torch>=2.10.0",
     "torchvision>=0.25.0",
+    "opencv-python"
 ]

@@ -1,5 +1,5 @@
 model:
-  model_name: "energy_based_learning.pth"
+  model_name: "ebt.pth"
 
 # Trainer config for contrastive
 contrastive:
@@ -9,7 +9,7 @@ contrastive:
 
 # Trainer config for ebt
 ebt:
-  steps: 50
+  steps: 20
   alpha: 10
   reg_coef: 0.001
 
@@ -30,7 +30,7 @@ training:
   num_episodes: 100
   batch_size: 16
   print_every: 4
-  device: "mps" # I am on a mac; MPS = Metal Performance Shader
+  device: "cuda" # I am on a mac; MPS = Metal Performance Shader
 
 inference:
   samples: 8

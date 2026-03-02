@@ -18,8 +18,19 @@ class EBTTrainer (LangevinTrainer):
         
         self.model.to(self.device) # put model to device
     
+    """
+    Improvements: 
+    
+    Random MCMC steps
+    Random Alpha
+    TruncateMCMC? 
+    You might need to alter the parameters better for the EBT
+    Check more!!
+    """
+    
     def forward(self, x, condition=None): # x is the "actual" or "desired input"; the 8 digit
         x = x.to(self.device)
+
         x_fake, extra = self.sample_langevin(
             num_samples=x.size(0),
             condition=condition,
