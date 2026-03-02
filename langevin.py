@@ -53,6 +53,7 @@ class LangevinTrainer (nn.Module):
         gradient_method:GradientMethod, # what Gradient method to use
         stop_method:StopMethod,         # what Stop Method to use
         noise_scale=0.005,              # we add a small noise scale
+        clamp_grad=None,                # whether to clamp the gradients. If float value, then clips from -value to value
         ret_extra=False,                # returns extra information like energy and num steps
     ):
         # prepare x sample
@@ -95,8 +96,9 @@ class LangevinTrainer (nn.Module):
                 energy.sum(), 
                 x_sample, 
                 create_graph=should_create_graph,
-                retain_graph=should_create_graph
             )[0]
+            if clamp_grad is not None:
+                grads = torch.clamp(grads, -clamp_grad, clamp_grad)
             
             # Update x_sample
             noise = torch.randn_like(x_sample) * noise_scale

@@ -14,7 +14,7 @@ class EBTTrainer (LangevinTrainer):
 
         self.steps = conf.ebt.steps
         self.alpha = conf.ebt.alpha
-        self.reg_coef = conf.ebt.reg_coef
+        self.clamp_grad = conf.ebt.clamp_grad
         
         self.model.to(self.device) # put model to device
     
@@ -39,6 +39,7 @@ class EBTTrainer (LangevinTrainer):
             gradient_method=GradientMethod.LAST_STEP,
             stop_method=StopStep(max_steps=self.steps),
             noise_scale=0,
+            clamp_grad=self.clamp_grad,
             ret_extra=True
         )
         energy_h = extra["energy_history"]

@@ -9,9 +9,9 @@ contrastive:
 
 # Trainer config for ebt
 ebt:
-  steps: 20
+  steps: 50
   alpha: 10
-  reg_coef: 0.001
+  clamp_grad: 0.03
 
 memory:
   num_workers: 8

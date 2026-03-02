@@ -95,7 +95,7 @@ class EBT_IMG_Denoise(L.LightningModule):
 
                 if self.hparams.no_mcmc_detach:
                     predicted_x = predicted_x.requires_grad_() # B, C, W, H
-                else: # default, do detach
+                else: 
                     predicted_x = predicted_x.detach().requires_grad_() # B, C, W, H
                 
                 if self.hparams.langevin_dynamics_noise != 0 and not (no_randomness and self.hparams.no_langevin_during_eval):
