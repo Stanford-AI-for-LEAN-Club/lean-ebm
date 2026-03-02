@@ -47,6 +47,7 @@ class LangevinTrainer (nn.Module):
     def sample_langevin (
         self, 
         num_samples,                    # number of samples to generate
+        condition,                      # the condition to use
         step_size,                      # step size
         device,                         # what device to run on
         gradient_method:GradientMethod, # what Gradient method to use
@@ -67,7 +68,7 @@ class LangevinTrainer (nn.Module):
             num_steps += 1 # incr steps
 
             # 1. Forward pass to get energy
-            energy = self.model(x_sample)
+            energy = self.model(x_sample, condition=condition)
             current_energy = energy.mean().cpu().item()
             
             # determine variables for gradient calculation

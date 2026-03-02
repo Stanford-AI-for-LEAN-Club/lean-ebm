@@ -64,7 +64,7 @@ class Trainer:
     def reset (self):
         self.total_steps = 0
 
-    def train(self, dl=None): # override the dl
+    def train(self, dl=None, unpack=None): # override the dl
         assert self.train_dataloader is not None or dl is not None
         dl = self.accelerator.prepare(dl) if dl is not None else self.train_dataloader
 
@@ -76,8 +76,7 @@ class Trainer:
                 with self.accelerator.accumulate(self.model):
 
                     # Model is expected to return (loss, predictions)
-                    #loss, logs = self.model(**batch, steps=self.total_steps)
-                    loss, logs = self.model(batch[0])
+                    loss, logs = self.model(**unpack(batch))
                     self.accelerator.backward(loss)
 
                     # 5. Gradient Clipping

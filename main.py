@@ -27,12 +27,6 @@ def main(cfg: DictConfig):
         download=True
     )
     
-    # filter the dataset
-    def get_digit_loader(dataset, digit):
-        indices = [i for i, label in enumerate(dataset.targets) if label == digit]
-        return Subset(dataset, indices)
-    dataset = get_digit_loader(dataset, 8)
-
     trainer = Trainer(
         model=EBTTrainer(CNN(conf), conf),
         config=conf
@@ -48,7 +42,10 @@ def main(cfg: DictConfig):
     # Training phrase
     print("Training...")
     for _ in range(conf.training.num_episodes): # trainer tracks steps internally
-        trainer.train(dl=dl)
+        trainer.train(
+            dl=dl, 
+            unpack=lambda x: {"x": x[0], "condition": x[1]}
+        )
 
 if __name__ == "__main__":
     main()

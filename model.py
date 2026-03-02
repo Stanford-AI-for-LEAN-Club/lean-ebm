@@ -29,7 +29,10 @@ class CNN(nn.Module):
             nn.Conv2d(c_hid3, c_hid3, kernel_size=3, stride=2, padding=1), # [2x2]
             Swish(),
             nn.Flatten(),
-            nn.Linear(c_hid3*4, c_hid3),
+        )
+        
+        self.linear_layers = nn.Sequential(
+            nn.Linear(c_hid3*4 + 10, c_hid3),
             Swish(),
             nn.Linear(c_hid3, 1)
         )
@@ -37,6 +40,9 @@ class CNN(nn.Module):
         # MSE Loss
         self.mse_loss = nn.MSELoss()
 
-    def forward (self, x):
-        x = self.cnn_layers(x).squeeze(dim=-1)
+    def forward (self, x, condition):
+        condition = F.one_hot(condition, num_classes=10)        
+        x = self.cnn_layers(x)
+        x = self.linear_layers(torch.cat([x, condition], dim=1))
+        x = x.squeeze(dim=-1)
         return x

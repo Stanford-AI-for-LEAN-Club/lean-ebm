@@ -16,13 +16,14 @@ class ContrastiveLearning (LangevinTrainer):
         
         self.model.to(self.device) # put model to device
     
-    def forward(self, x):
+    def forward(self, x, condition=None):
         # Generate fake and real data samples; 
         # perform loss to decrease energy of the real images and increase energy of the fake images 
         # Fake images generated via the model (acts like GANs in this sense)
         x = x.to(self.device)
         x_fake = self.sample_langevin(
             num_samples=x.size(0),
+            condition=condition,
             step_size=self.alpha,
             device=self.device,
             gradient_method=GradientMethod.NONE,
@@ -30,8 +31,8 @@ class ContrastiveLearning (LangevinTrainer):
             noise_scale=0.005,
             ret_extra=False
         )
-        energy_real = self.model(x)      # E(x_real)
-        energy_fake = self.model(x_fake) # E(x_fake)
+        energy_real = self.model(x, condition=condition)      # E(x_real)
+        energy_fake = self.model(x_fake, condition=condition) # E(x_fake)
 
         # cd = Contrastive Learning loss
         cd_loss = energy_real.mean() - energy_fake.mean()

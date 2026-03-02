@@ -18,10 +18,11 @@ class EBTTrainer (LangevinTrainer):
         
         self.model.to(self.device) # put model to device
     
-    def forward(self, x): # x is the "actual" or "desired input"; the 8 digit
+    def forward(self, x, condition=None): # x is the "actual" or "desired input"; the 8 digit
         x = x.to(self.device)
         x_fake, extra = self.sample_langevin(
             num_samples=x.size(0),
+            condition=condition,
             step_size=self.alpha,
             device=self.device,
             gradient_method=GradientMethod.LAST_STEP,
