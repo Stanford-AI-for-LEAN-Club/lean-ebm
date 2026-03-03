@@ -1,0 +1,20 @@
+2026-03-02 21:47:14,383 INFO    MainThread:4163912 [wandb_setup.py:_flush():81] Current SDK version is 0.24.0
+2026-03-02 21:47:14,383 INFO    MainThread:4163912 [wandb_setup.py:_flush():81] Configure stats pid to 4163912
+2026-03-02 21:47:14,384 INFO    MainThread:4163912 [wandb_setup.py:_flush():81] Loading settings from environment variables
+2026-03-02 21:47:14,385 INFO    MainThread:4163912 [wandb_init.py:setup_run_log_directory():717] Logging user logs to /simurgh/u/eshaanb/ebm-experiments/wandb/run-20260302_214714-oafbo5aw/logs/debug.log
+2026-03-02 21:47:14,385 INFO    MainThread:4163912 [wandb_init.py:setup_run_log_directory():718] Logging internal logs to /simurgh/u/eshaanb/ebm-experiments/wandb/run-20260302_214714-oafbo5aw/logs/debug-internal.log
+2026-03-02 21:47:14,385 INFO    MainThread:4163912 [wandb_init.py:init():844] calling init triggers
+2026-03-02 21:47:14,386 INFO    MainThread:4163912 [wandb_init.py:init():849] wandb.init called with sweep_config: {}
+config: {'_wandb': {}}
+2026-03-02 21:47:14,386 INFO    MainThread:4163912 [wandb_init.py:init():892] starting backend
+2026-03-02 21:47:26,533 INFO    MainThread:4163912 [wandb_init.py:init():895] sending inform_init request
+2026-03-02 21:47:26,669 INFO    MainThread:4163912 [wandb_init.py:init():903] backend started and connected
+2026-03-02 21:47:26,671 INFO    MainThread:4163912 [wandb_init.py:init():973] updated telemetry
+2026-03-02 21:47:28,190 INFO    MainThread:4163912 [wandb_init.py:init():997] communicating run to backend with 90.0 second timeout
+2026-03-02 21:47:28,435 INFO    MainThread:4163912 [wandb_init.py:init():1044] starting run threads in backend
+2026-03-02 21:48:22,399 INFO    MainThread:4163912 [wandb_run.py:_console_start():2529] atexit reg
+2026-03-02 21:48:22,399 INFO    MainThread:4163912 [wandb_run.py:_redirect():2377] redirect: wrap_raw
+2026-03-02 21:48:22,399 INFO    MainThread:4163912 [wandb_run.py:_redirect():2446] Wrapping output streams.
+2026-03-02 21:48:22,399 INFO    MainThread:4163912 [wandb_run.py:_redirect():2469] Redirects installed.
+2026-03-02 21:48:22,675 INFO    MainThread:4163912 [wandb_init.py:init():1084] run started, returning control to user process
+2026-03-02 21:48:22,676 INFO    MainThread:4163912 [wandb_run.py:_config_callback():1404] config_cb None None {'model': "{'model_name': 'ebt.pth'}", 'contrastive': "{'steps': 60, 'alpha': 10, 'reg_coef': 0.01}", 'ebt': "{'steps': 50, 'alpha': 10, 'clamp_grad': 0.03}", 'memory': "{'num_workers': 8}", 'training': "{'learning_rate': 0.001, 'weight_decay': 0.01, 'gradient_accumulation_steps': 1, 'max_grad_norm': 2.0, 'epochs': 3, 'checkpoint_dir': './checkpoints', 'save_steps': 200, 'num_episodes': 100, 'batch_size': 16, 'print_every': 4, 'device': 'cuda'}", 'inference': "{'samples': 8}", 'wandb': "{'project': 'EBM', 'entity': 'eshaanb', 'name': 'EBM', 'notes': 'EBM'}"}

@@ -1,0 +1,42 @@
+{
+  "os": "Linux-6.8.0-90-generic-x86_64-with-glibc2.39",
+  "python": "CPython 3.12.3",
+  "startedAt": "2026-03-03T05:47:14.219066Z",
+  "program": "/simurgh/u/eshaanb/ebm-experiments/main.py",
+  "codePath": "main.py",
+  "codePathLocal": "main.py",
+  "git": {
+    "remote": "https://github.com/7peng/lean-ebm/",
+    "commit": "b7c1b2639a064e27e0f838fe7407937e6cf8205e"
+  },
+  "root": "/simurgh/u/eshaanb/ebm-experiments",
+  "host": "simurgh5.stanford.edu",
+  "executable": "/simurgh/u/eshaanb/3DReconstr/3d_venv/bin/python3",
+  "cpu_count": 64,
+  "cpu_count_logical": 128,
+  "gpu": "NVIDIA L40S",
+  "gpu_count": 1,
+  "disk": {
+    "/": {
+      "total": "470306373632",
+      "used": "63234375680"
+    }
+  },
+  "memory": {
+    "total": "1623030444032"
+  },
+  "gpu_nvidia": [
+    {
+      "name": "NVIDIA L40S",
+      "memoryTotal": "48305799168",
+      "cudaCores": 18176,
+      "architecture": "Ada",
+      "uuid": "GPU-ed8253cb-9ad7-dae0-3bde-3efa9f9f45f1"
+    }
+  ],
+  "cudaVersion": "13.0",
+  "slurm": {
+    "job_id": "14680576"
+  },
+  "writerId": "1w6hbpt8dq7czss1kbqyyyolspdglmlh"
+}

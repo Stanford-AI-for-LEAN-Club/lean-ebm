@@ -90,12 +90,14 @@ class EBT_IMG_Denoise(L.LightningModule):
                 mcmc_steps.append(step)
 
         with torch.set_grad_enabled(True): # set to true for validation since grad would be off
-            for i, mcmc_step in enumerate(mcmc_steps):
-                # the values inside is ignored...
+            for i, mcmc_step in enumerate(mcmc_steps): # mcmc steps is randomized!!
 
-                if self.hparams.no_mcmc_detach:
+                # On system **2** learning --> LAST STEP
+                if self.hparams.no_mcmc_detach: 
                     predicted_x = predicted_x.requires_grad_() # B, C, W, H
-                else: 
+
+                # on System **1** leraning, detach!
+                else:  
                     predicted_x = predicted_x.detach().requires_grad_() # B, C, W, H
                 
                 if self.hparams.langevin_dynamics_noise != 0 and not (no_randomness and self.hparams.no_langevin_during_eval):
@@ -108,12 +110,15 @@ class EBT_IMG_Denoise(L.LightningModule):
                 energy_preds = self.transformer(predicted_x, condition).squeeze()
                 energy_preds = energy_preds.mean(dim=[1]).reshape(-1) # B
                 predicted_energies_list.append(energy_preds)
-
+                
+                # On system **2** Learning --> truncuate MCMC | LAST STEP
                 if self.hparams.truncate_mcmc:  #retain_graph defaults to create_graph value here; if learning is true then create_graph else dont (inference)
                     if i == (len(mcmc_steps) - 1):
                         predicted_embeds_grad = torch.autograd.grad([energy_preds.sum()], [predicted_x], create_graph=learning)[0]
                     else:
                         predicted_embeds_grad = torch.autograd.grad([energy_preds.sum()], [predicted_x], create_graph=False)[0]
+                
+                # On system **1** learning, don't truncate MCMC
                 else:
                     predicted_embeds_grad = torch.autograd.grad([energy_preds.sum()], [predicted_x], create_graph=learning)[0]
                 

@@ -69,6 +69,12 @@ class LangevinTrainer (nn.Module):
         while True:
             num_steps += 1 # incr steps
 
+            # make sure to detach on predicted_x
+            if gradient_method == GradientMethod.ALL_STEPS: # "system one learning"
+                x_sample = x_sample.detach().requires_grad_()
+            elif gradient_method == GradientMethod.LAST_STEP: # "system two learning"
+                x_sample = x_sample.requires_grad_()
+
             # 1. Forward pass to get energy
             energy = self.model(x_sample, condition=condition)
             current_energy = energy.mean().cpu().item()
