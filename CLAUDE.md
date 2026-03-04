@@ -8,8 +8,10 @@ Energy-Based Model (EBM) trained on MNIST. The model learns a scalar energy func
 
 ## Setup & Commands
 
-Uses **uv** as the package manager (Python 3.12):
+Uses **uv** as the package manager (Python 3.12).
+uv is installed at `~/uv_envs/bin/uv` — add to PATH before use:
 ```bash
+export PATH="$HOME/uv_envs/bin:$PATH"
 uv sync                                # Install dependencies from uv.lock
 uv run python -m lean_ebm.main         # Run training (uses Hydra, config from config.yaml)
 ```
