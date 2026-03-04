@@ -10,3 +10,12 @@ checkpoints/
 
 # Virtual environments
 .venv
+
+# Experiment tracking
+wandb/
+
+# Generated images
+*.png
+
+# macOS
+.DS_Store

@@ -3,7 +3,7 @@ import torch
 import torch.nn.functional as F
 from random import randint
 import cv2
-from langevin import LangevinTrainer, GradientMethod, StopStep
+from .langevin import LangevinTrainer, GradientMethod, StopStep
 
 class ContrastiveLearning (LangevinTrainer):
     def __init__(self, model, conf, *args, **kwargs):

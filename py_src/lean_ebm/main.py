@@ -1,5 +1,5 @@
-from trainer import Trainer
-from model import CNN
+from .trainer import Trainer
+from .model import CNN
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
@@ -7,10 +7,10 @@ from torch.utils.data import DataLoader, Subset
 import torch
 
 # different training methods
-from contrastive import ContrastiveLearning
-from ebt import EBTTrainer
+from .contrastive import ContrastiveLearning
+from .ebt import EBTTrainer
 
-@hydra.main(version_base=None, config_path="./", config_name="config")
+@hydra.main(version_base=None, config_path="../../", config_name="config")
 def main(cfg: DictConfig):
     conf = OmegaConf.to_container(cfg, resolve=True)
     conf = OmegaConf.create(conf)

@@ -1,0 +1,1 @@
+# Goal: lora fine tune a 8b open weight model 

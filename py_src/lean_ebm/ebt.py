@@ -4,7 +4,7 @@ import torch
 import torch.nn.functional as F
 from random import randint
 import cv2
-from langevin import StopStep, LangevinTrainer, GradientMethod
+from .langevin import StopStep, LangevinTrainer, GradientMethod
 
 class EBTTrainer (LangevinTrainer):
     def __init__(self, model, conf, *args, **kwargs):
