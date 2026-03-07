@@ -22,3 +22,7 @@ wandb/
 
 # wdata
 ./data/
+
+# other ignores
+checkpoints/
+outputs/
