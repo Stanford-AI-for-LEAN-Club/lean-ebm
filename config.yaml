@@ -2,24 +2,38 @@ model:
   model_name: "energy_based_learning.pth"
   steps: 1
   alpha: 300 # 1/steps
+  model_name: "ebt.pth"
+
+# Trainer config for contrastive
+contrastive:
+  steps: 60 
+  alpha: 10
+  reg_coef: 0.01 
+
+# Trainer config for ebt
+ebt:
+  steps: 50
+  alpha: 10
+  clamp_grad: 0.03
 
 memory:
   num_workers: 8
 
 training:
-  # Optimization
-  learning_rate: 6.4e-5
+  # Adam Optimization
+  learning_rate: 0.001
   weight_decay: 0.01
   gradient_accumulation_steps: 1
-  max_grad_norm: 1.0 # don't do massive updates
+  max_grad_norm: 2.0 # don't do massive updates
 
   # Training Params
   epochs: 3
   checkpoint_dir: "./checkpoints"
-  save_steps: 500
-  num_episodes: 10000
-  batch_size: 8
+  save_steps: 200
+  num_episodes: 100
+  batch_size: 16
   print_every: 4
+  device: "cuda" # I am on a mac; MPS = Metal Performance Shader
 
 inference:
   samples: 8
@@ -29,5 +43,3 @@ wandb:
   entity: "eshaanb"
   name: "EBM"
   notes: "EBM"
-
-# api key: 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
