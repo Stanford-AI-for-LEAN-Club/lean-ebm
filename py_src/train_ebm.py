@@ -1,5 +1,6 @@
 from utils.trainer import Trainer
 from models.ired import IREDEnergy
+from models.cnn import CNN
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
@@ -11,7 +12,7 @@ from ebm.contrastive import ContrastiveLearning
 from ebm.ebt import EBTTrainer
 from ebm.ired import IREDTrainer
 
-@hydra.main(version_base=None, config_path="./", config_name="config")
+@hydra.main(version_base=None, config_path="./config/", config_name="conf")
 def main(cfg: DictConfig):
     conf = OmegaConf.to_container(cfg, resolve=True)
     conf = OmegaConf.create(conf)
@@ -19,7 +20,7 @@ def main(cfg: DictConfig):
 
     # NNIST Dataset
     dataset = datasets.MNIST(
-        root='data/', 
+        root='../data/', 
         train=True, 
         transform=transforms.Compose([
             transforms.ToTensor(),
@@ -32,11 +33,11 @@ def main(cfg: DictConfig):
     def get_digit_loader(dataset, digit):
         indices = [i for i, label in enumerate(dataset.targets) if label == digit]
         return Subset(dataset, indices)
-    dataset = get_digit_loader(dataset, 8)
+    #dataset = get_digit_loader(dataset, 8)
 
     trainer = Trainer(
-        model=IREDTrainer(IREDEnergy(conf), conf),
-        config=conf
+        model=EBTTrainer(CNN(conf), conf),
+        config=conf,
     )
 
     dl = DataLoader(
@@ -48,7 +49,11 @@ def main(cfg: DictConfig):
 
     # Training phrase
     print("Training...")
-    trainer.train(dl=dl)
+    trainer.train(
+        dl=dl,
+        # convert from "batch" in "for batch in "
+        unpack=lambda x: {"x": x[0], "condition": x[1]} 
+    )
 
 if __name__ == "__main__":
     main()

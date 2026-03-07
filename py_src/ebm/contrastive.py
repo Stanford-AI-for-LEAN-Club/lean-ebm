@@ -1,5 +1,5 @@
 from random import randint
-from ..utils.langevin import LangevinTrainer, GradientMethod, StopStep
+from utils.langevin import LangevinTrainer, GradientMethod, StopStep
 
 class ContrastiveLearning (LangevinTrainer):
     def __init__(self, model, conf, *args, **kwargs):

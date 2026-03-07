@@ -1,5 +1,4 @@
 model:
-  model_name: "energy_based_learning.pth"
   steps: 1
   alpha: 300 # 1/steps
   model_name: "ebt.pth"
@@ -34,14 +33,14 @@ memory:
 
 training:
   # Adam Optimization
-  learning_rate: 0.001
-  weight_decay: 0.01
+  learning_rate: 3e-4
+  weight_decay: 0
   gradient_accumulation_steps: 1
   max_grad_norm: 2.0 # don't do massive updates
 
   # Training Params
   epochs: 3
-  checkpoint_dir: "./checkpoints"
+  checkpoint_dir: "../checkpoints"
   save_steps: 200
   batch_size: 16
   print_every: 4

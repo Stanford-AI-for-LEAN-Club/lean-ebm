@@ -1,7 +1,7 @@
 # EBT Training paradigm 
 import torch.nn.functional as F
 from random import randint
-from ..utils.langevin import StopStep, LangevinTrainer, GradientMethod
+from utils.langevin import StopStep, LangevinTrainer, GradientMethod
 
 class EBTTrainer (LangevinTrainer):
     def __init__(self, model, conf, *args, **kwargs):
@@ -23,6 +23,10 @@ class EBTTrainer (LangevinTrainer):
     * Gradient methods last step does work
     * what is the difference thet wo
 
+    Why is there an averaging effect
+    * Model architecture (implement DiT?)
+    * Or is this within training (maybe because we are doing MSE)
+
     Random MCMC steps
     * Implemented random steps 
     
@@ -41,7 +45,7 @@ class EBTTrainer (LangevinTrainer):
             condition=condition,
             step_size=self.alpha,
             device=self.device,
-            gradient_method=GradientMethod.ALL_STEPS, # works for GradientMethod.LAST_STEP
+            gradient_method=GradientMethod.LAST_STEP,  # ALL Steps doesn't work
             stop_method=StopStep(max_steps=self.steps),
             noise_scale=0,
             clamp_grad=self.clamp_grad,

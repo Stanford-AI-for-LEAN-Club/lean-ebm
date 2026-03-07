@@ -64,7 +64,7 @@ class Trainer:
     def reset (self):
         self.total_steps = 0
 
-    def train(self, dl=None, unpack=None): # override the dl
+    def train(self, dl=None, unpack=lambda x: x): # override the dl
         assert self.train_dataloader is not None or dl is not None
         dl = self.accelerator.prepare(dl) if dl is not None else self.train_dataloader
 
