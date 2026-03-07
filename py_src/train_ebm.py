@@ -1,5 +1,5 @@
-from trainer import Trainer
-from model import IREDEnergy
+from utils.trainer import Trainer
+from models.ired import IREDEnergy
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
@@ -7,9 +7,9 @@ from torch.utils.data import DataLoader, Subset
 import torch
 
 # different training methods
-from contrastive import ContrastiveLearning
-from ebt import EBTTrainer
-from ired import IREDTrainer
+from ebm.contrastive import ContrastiveLearning
+from ebm.ebt import EBTTrainer
+from ebm.ired import IREDTrainer
 
 @hydra.main(version_base=None, config_path="./", config_name="config")
 def main(cfg: DictConfig):
@@ -48,8 +48,7 @@ def main(cfg: DictConfig):
 
     # Training phrase
     print("Training...")
-    for _ in range(conf.training.num_episodes): # trainer tracks steps internally
-        trainer.train(dl=dl)
+    trainer.train(dl=dl)
 
 if __name__ == "__main__":
     main()

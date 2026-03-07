@@ -117,55 +117,6 @@ class Trainer:
     def log (self, dict_log):
         self.accelerator.log(dict_log)
 
-    def train_single(self, sample):
-        """
-        Trains on a single sample/batch.
-        Useful for RL transitions or online learning.
-
-        Args:
-            sample: The data to train on (e.g., a dict of tensors)
-            step_index: Current global step for logging and accumulation logic
-        """
-        self.model.train()
-
-        # Context manager handles mixed precision and distributed sync
-        with self.accelerator.accumulate(self.model):
-            # Model returns loss and predictions
-            loss, logs = self.model(sample)
-
-            # 2. Backward Pass
-            self.accelerator.backward(loss)
-
-            # 3. Gradient Clipping
-            if self.accelerator.sync_gradients:
-                self.accelerator.clip_grad_norm_(
-                    self.model.parameters(),
-                    self.config.training.max_grad_norm
-                )
-
-            # 4. Optimizer Step
-            self.optimizer.step()
-            self.optimizer.zero_grad()
-
-        # 5. Logging (only if we actually performed a sync/step)
-        if self.accelerator.sync_gradients:
-            self.accelerator.log(logs)
-
-            # Print every N steps to avoid flooding the console
-            if (self.total_steps+1) % self.config.training.get("print_every", 10) == 0:
-                st = f"Step {self.total_steps+1} | Train Loss: {loss:.4f}"
-                print(logs)
-                for key, value in logs.items():
-                    st += f" | {key}: {value:.4f}" 
-                self.accelerator.print(st)
-
-            # Occasional checkpointing based on steps rather than epochs
-            if (self.total_steps+1) % self.config.training.get("save_steps", 100) == 0:
-                self.save_checkpoint(f"step_{self.total_steps+1}")
-                self.evaluate(self.total_steps)
-
-        return loss.item()
-
     @torch.no_grad()
     def evaluate(self, step):
         if self.val_dataloader is None:

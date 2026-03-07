@@ -2,11 +2,7 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 from random import randint
-
-class Swish(nn.Module):
-    def forward(self, x):
-        return x * torch.sigmoid(x)
-
+from models.swish import Swish
 
 class CNN(nn.Module):
     def __init__(self, conf):

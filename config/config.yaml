@@ -43,7 +43,6 @@ training:
   epochs: 3
   checkpoint_dir: "./checkpoints"
   save_steps: 200
-  num_episodes: 100
   batch_size: 16
   print_every: 4
   device: "cuda" # I am on a mac; MPS = Metal Performance Shader

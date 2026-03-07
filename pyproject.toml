@@ -13,9 +13,9 @@ dependencies = [
     "peft>=0.13.0",
     "datasets>=3.0.0",
     "trl>=0.12.0",
-    "bitsandbytes>=0.44.0"
-    "opencv-python",
+    "bitsandbytes>=0.44.0",
     "torchvision>=0.25.0",
+    "opencv-python>=4.13.0.92",
 ]
 
 [build-system]

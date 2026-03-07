@@ -1,8 +1,4 @@
-import torch.nn as nn
-import torch
-import torch.nn.functional as F
 from random import randint
-import cv2
 from ..utils.langevin import LangevinTrainer, GradientMethod, StopStep
 
 class ContrastiveLearning (LangevinTrainer):

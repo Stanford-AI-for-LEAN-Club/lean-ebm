@@ -13,7 +13,6 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
 from peft import LoraConfig
 from trl import SFTTrainer
 
-
 def parse_args():
     parser = argparse.ArgumentParser(description="LoRA fine-tune Goedel-Prover-V2-32B on MiniF2F-Lean4")
     parser.add_argument("--model_name", type=str, default="Goedel-LM/Goedel-Prover-V2-32B")

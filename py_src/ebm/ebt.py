@@ -1,9 +1,6 @@
 # EBT Training paradigm 
-import torch.nn as nn
-import torch
 import torch.nn.functional as F
 from random import randint
-import cv2
 from ..utils.langevin import StopStep, LangevinTrainer, GradientMethod
 
 class EBTTrainer (LangevinTrainer):
@@ -20,12 +17,20 @@ class EBTTrainer (LangevinTrainer):
     
     """
     Improvements: 
-    
+
+    System 1 vs. System 2 Learning <-- find out what this means
+    * Gradient method all steps doesn't work
+    * Gradient methods last step does work
+    * what is the difference thet wo
+
     Random MCMC steps
+    * Implemented random steps 
+    
     Random Alpha
-    TruncateMCMC? 
+    * implemented annealed alpha 
+    * + alpha is a nn.Parameter
+    
     You might need to alter the parameters better for the EBT
-    Check more!!
     """
     
     def forward(self, x, condition=None): # x is the "actual" or "desired input"; the 8 digit
@@ -36,7 +41,7 @@ class EBTTrainer (LangevinTrainer):
             condition=condition,
             step_size=self.alpha,
             device=self.device,
-            gradient_method=GradientMethod.LAST_STEP,
+            gradient_method=GradientMethod.ALL_STEPS, # works for GradientMethod.LAST_STEP
             stop_method=StopStep(max_steps=self.steps),
             noise_scale=0,
             clamp_grad=self.clamp_grad,
