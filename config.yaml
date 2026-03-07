@@ -16,6 +16,19 @@ ebt:
   alpha: 10
   clamp_grad: 0.03
 
+# Trainer config for ired
+ired:
+  num_landscapes: 10
+  sigma_max: 0.95
+  sigma_min: 0.01
+  neg_corruption_scale: 0.5
+  neg_refine_steps: 2
+  neg_refine_step_size: 0.2
+  mse_weight: 1.0
+  reg_coef: 0.00001
+  contrastive_temperature: 5.0
+  energy_dim: 1
+
 memory:
   num_workers: 8
 
