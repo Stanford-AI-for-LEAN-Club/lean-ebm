@@ -21,8 +21,9 @@ wandb/
 .DS_Store
 
 # wdata
-./data/
+data/
 
 # other ignores
 checkpoints/
 outputs/
+
