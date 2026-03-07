@@ -1,5 +1,5 @@
-from .trainer import Trainer
-from .model import CNN
+from trainer import Trainer
+from model import IREDEnergy
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
@@ -7,10 +7,11 @@ from torch.utils.data import DataLoader, Subset
 import torch
 
 # different training methods
-from .contrastive import ContrastiveLearning
-from .ebt import EBTTrainer
+from contrastive import ContrastiveLearning
+from ebt import EBTTrainer
+from ired import IREDTrainer
 
-@hydra.main(version_base=None, config_path="../../", config_name="config")
+@hydra.main(version_base=None, config_path="./", config_name="config")
 def main(cfg: DictConfig):
     conf = OmegaConf.to_container(cfg, resolve=True)
     conf = OmegaConf.create(conf)
@@ -18,7 +19,7 @@ def main(cfg: DictConfig):
 
     # NNIST Dataset
     dataset = datasets.MNIST(
-        root='../4D-Dyn/flow-matching-mnist/data/', 
+        root='data/', 
         train=True, 
         transform=transforms.Compose([
             transforms.ToTensor(),
@@ -27,8 +28,14 @@ def main(cfg: DictConfig):
         download=True
     )
     
+    # filter the dataset
+    def get_digit_loader(dataset, digit):
+        indices = [i for i, label in enumerate(dataset.targets) if label == digit]
+        return Subset(dataset, indices)
+    dataset = get_digit_loader(dataset, 8)
+
     trainer = Trainer(
-        model=EBTTrainer(CNN(conf), conf),
+        model=IREDTrainer(IREDEnergy(conf), conf),
         config=conf
     )
 
@@ -42,11 +49,9 @@ def main(cfg: DictConfig):
     # Training phrase
     print("Training...")
     for _ in range(conf.training.num_episodes): # trainer tracks steps internally
-        trainer.train(
-            dl=dl, 
-            unpack=lambda x: {"x": x[0], "condition": x[1]}
-        )
+        trainer.train(dl=dl)
 
 if __name__ == "__main__":
     main()
+
 
