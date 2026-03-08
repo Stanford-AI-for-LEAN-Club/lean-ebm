@@ -1,13 +1,16 @@
+# Torch stuff
 from utils.trainer import Trainer
-from models.ired import IREDEnergy
-from models.cnn import CNN
 import hydra
 from omegaconf import OmegaConf, DictConfig
 from torchvision import datasets, transforms
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 import torch
 
-# different training methods
+# Models
+from models.ired import IREDEnergy
+from models.cnn import CNN
+
+# Training methods
 from ebm.contrastive import ContrastiveLearning
 from ebm.ebt import EBTTrainer
 from ebm.ired import IREDTrainer
@@ -24,19 +27,19 @@ def main(cfg: DictConfig):
         train=True, 
         transform=transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=0.5, std=0.5) # Result in -1 t 1
+            transforms.Normalize(mean=0.5, std=0.5) # Result in -1 to 1
         ]),
         download=True
     )
     
     # filter the dataset
-    def get_digit_loader(dataset, digit):
-        indices = [i for i, label in enumerate(dataset.targets) if label == digit]
-        return Subset(dataset, indices)
+    #def get_digit_loader(dataset, digit):
+        #indices = [i for i, label in enumerate(dataset.targets) if label == digit]
+        #return Subset(dataset, indices)
     #dataset = get_digit_loader(dataset, 8)
 
     trainer = Trainer(
-        model=EBTTrainer(CNN(conf), conf),
+        model=IREDTrainer(IREDEnergy(conf), conf),
         config=conf,
     )
 
@@ -51,7 +54,7 @@ def main(cfg: DictConfig):
     print("Training...")
     trainer.train(
         dl=dl,
-        # convert from "batch" in "for batch in "
+        # convert from "batch" in "for batch in train" to whatever Trainer accepts
         unpack=lambda x: {"x": x[0], "condition": x[1]} 
     )
 

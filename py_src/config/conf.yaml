@@ -1,7 +1,7 @@
 model:
   steps: 1
   alpha: 300 # 1/steps
-  model_name: "ebt.pth"
+  model_name: "ired.pth"
 
 # Trainer config for contrastive
 contrastive:
@@ -17,16 +17,22 @@ ebt:
 
 # Trainer config for ired
 ired:
-  num_landscapes: 10
-  sigma_max: 0.95
-  sigma_min: 0.01
-  neg_corruption_scale: 0.5
-  neg_refine_steps: 2
-  neg_refine_step_size: 0.2
-  mse_weight: 1.0
-  reg_coef: 0.00001
-  contrastive_temperature: 5.0
   energy_dim: 1
+
+  # noise params
+  num_landscapes: 50 
+  sigma_max: 0.99
+  sigma_min: 0.001
+  neg_corruption_scale: 0.5 # how noisy we want our negative sample to be
+
+  # refine steps after we noise
+  neg_refine_steps: 0
+  neg_refine_step_size: 0
+
+  # loss weight
+  mse_weight: 1.0
+  reg_coef: 1e-5
+  contrastive_weight: 1e-5
 
 memory:
   num_workers: 8
@@ -40,7 +46,7 @@ training:
 
   # Training Params
   epochs: 3
-  checkpoint_dir: "../checkpoints"
+  checkpoint_dir: "./checkpoints"
   save_steps: 200
   batch_size: 16
   print_every: 4

@@ -36,11 +36,11 @@ class LangevinTrainer (nn.Module):
     # helper function to save images
     def save_imgs (self, x, x_fake):
         cv2.imwrite(
-            "test.png",
+            "../outputs/test.png", # ideally path should be in conf
             (x_fake[0][0].cpu().detach().numpy() + 1)/2*255
         ) 
         cv2.imwrite(
-            "real.png",
+            "../outputs/real.png", # ideally path should be in conf
             (x[0][0].cpu().detach().numpy() + 1)/2*255
         )
 

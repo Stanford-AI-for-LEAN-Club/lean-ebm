@@ -26,7 +26,6 @@ class IREDEnergy(nn.Module):
         c_hid1 = hidden_features // 2
         c_hid2 = hidden_features
         c_hid3 = hidden_features * 2
-        k_embed_dim = c_hid3  # match feature dimension for clean additive injection
 
         num_landscapes = int(conf.get("ired", {}).get("num_landscapes", 10))
         energy_dim = int(conf.get("ired", {}).get("energy_dim", 128))
@@ -47,17 +46,21 @@ class IREDEnergy(nn.Module):
         )
 
         # Landscape embedding: maps integer k -> vector of same width as trunk output
-        self.k_embedding = nn.Embedding(num_landscapes, k_embed_dim)
+        self.k_embedding = nn.Embedding(num_landscapes, 10)
 
         # Projects fused features to energy_dim so E = ||f||^2 is always >= 0
         self.energy_head = nn.Sequential(
+            nn.Linear(c_hid3+20, c_hid3),
             Swish(),
             nn.Linear(c_hid3, energy_dim),
         )
 
-    def forward(self, y, k_idx):
-        # y: (B, 1, 28, 28), k_idx: (B,)
-        feat = self.conv_trunk(y)               # (B, c_hid3)
+    def forward(self, x, k_idx, condition):
+        # x: (B, 1, 28, 28), k_idx: (B,)
+        condition = F.one_hot(condition, num_classes=10)        
+        feat = self.conv_trunk(x)               # (B, c_hid3)
         k_feat = self.k_embedding(k_idx)        # (B, c_hid3)
-        f = self.energy_head(feat + k_feat)     # (B, energy_dim)
+        f = self.energy_head(torch.cat([feat,k_feat,condition], dim=-1))     # (B, energy_dim)
+        
+        # note that we take the magnitude as the output
         return (f ** 2).sum(dim=-1)             # (B,) — E = ||f||^2 >= 0

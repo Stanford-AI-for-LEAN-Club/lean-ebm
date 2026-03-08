@@ -16,6 +16,7 @@ dependencies = [
     "bitsandbytes>=0.44.0",
     "torchvision>=0.25.0",
     "opencv-python>=4.13.0.92",
+    "matplotlib>=3.10.8",
 ]
 
 [build-system]
