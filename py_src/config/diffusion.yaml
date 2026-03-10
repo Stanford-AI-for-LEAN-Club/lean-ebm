@@ -1,0 +1,36 @@
+diffusion:
+  # Noising schedule
+  sigma_min: 0.01
+  sigma_max: 0.99
+
+model:
+  steps: 1
+  alpha: 300 # 1/steps
+  model_name: "diffusion.pth"
+
+memory:
+  num_workers: 8
+
+training:
+  # Adam Optimization
+  learning_rate: 3e-4
+  weight_decay: 0
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0 # don't do massive updates
+
+  # Training Params
+  epochs: 10
+  checkpoint_dir: "./checkpoints"
+  save_steps: 200
+  batch_size: 32
+  print_every: 4
+  device: "cuda" # I am on a mac; MPS = Metal Performance Shader
+
+inference:
+  samples: 8
+
+wandb:
+  project: "EBM"
+  entity: "eshaanb"
+  name: "EBM"
+  notes: "EBM"

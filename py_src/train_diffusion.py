@@ -1,3 +1,5 @@
+# Uses CIFAR-10
+
 # Torch stuff
 from utils.trainer import Trainer
 import hydra
@@ -6,40 +8,37 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader
 import torch
 
+# Trainer
+from diffusion.diff import DiffusionTrainer
+
 # Models
 from models.ired import *
 from models.cnn import CNN
+from models.unet import UNet
 
-# Training methods
-from ebm.contrastive import ContrastiveLearning
-from ebm.ebt import EBTTrainer
-from ebm.ired import IREDTrainer
-
-@hydra.main(version_base=None, config_path="./config/", config_name="conf")
+@hydra.main(version_base=None, config_path="./config/", config_name="diffusion")
 def main(cfg: DictConfig):
     conf = OmegaConf.to_container(cfg, resolve=True)
     conf = OmegaConf.create(conf)
     torch.set_printoptions(sci_mode=False, precision=5)
 
-    # NNIST Dataset
-    dataset = datasets.MNIST(
+    # CIFAR-10 Dataset
+    # Note: CIFAR-10 has 3 channels (RGB), so we normalize each channel.
+    dataset = datasets.CIFAR10(
         root='../data/', 
         train=True, 
         transform=transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=0.5, std=0.5) # Result in -1 to 1
+            # Normalizing all 3 channels to result in -1 to 1 range
+            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)) 
         ]),
         download=True
     )
-    
-    # filter the dataset
-    #def get_digit_loader(dataset, digit):
-        #indices = [i for i, label in enumerate(dataset.targets) if label == digit]
-        #return Subset(dataset, indices)
-    #dataset = get_digit_loader(dataset, 8)
 
+    # The Trainer and Model setup remains the same, 
+    # but ensure your 'conf' reflects the 3-channel input for CIFAR-10.
     trainer = Trainer(
-        model=IREDTrainer(IREDEnergy(conf), conf),
+        model=DiffusionTrainer(UNet(conf), conf),
         config=conf,
     )
 
@@ -50,15 +49,12 @@ def main(cfg: DictConfig):
         num_workers=conf.memory.num_workers
     )
 
-    # Training phrase
-    print("Training...")
+    # Training phase
+    print("Training on CIFAR-10...")
     trainer.train(
         dl=dl,
-        # convert from "batch" in "for batch in train" to whatever Trainer accepts
         unpack=lambda x: {"x": x[0], "condition": x[1]} 
     )
 
 if __name__ == "__main__":
     main()
-
-

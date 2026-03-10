@@ -92,15 +92,14 @@ class IREDTrainer(nn.Module):
     
         # Score supervision: || grad_y E(x, y_hat, k) - eps ||^2
         e_pos = self._energy(y_hat_pos, k_idx, condition)
-        # score_pred = torch.autograd.grad(
-        #     e_pos.sum(),
-        #     y_hat_pos,
-        #     create_graph=True,
-        # )[0]
-        mse_loss = F.mse_loss(e_pos, eps)
+        score_pred = torch.autograd.grad(
+            e_pos.sum(),
+            y_hat_pos,
+            create_graph=True,
+        )[0]
+        mse_loss = F.mse_loss(score_pred, eps)
 
         # Contrastive shaping between positive and negative energies
-        """
         y_neg = self._make_negative(y_true, condition)
         y_hat_neg = (sqrt_term * y_neg + sigma * eps).detach()
         e_neg = self._energy(y_hat_neg, k_idx, condition)
@@ -108,9 +107,6 @@ class IREDTrainer(nn.Module):
         energy_stack = torch.stack([e_pos, e_neg], dim=1)
         target = torch.zeros(e_pos.size(0)).to(energy_stack.device)
         contrastive_loss = F.cross_entropy(-energy_stack, target.long(), reduction='mean')
-        """
-        e_neg = torch.tensor(0.0)
-        contrastive_loss = torch.tensor(0.0)
 
         #contrastive_loss = (e_pos - e_neg).mean() # <--  
 
@@ -124,9 +120,9 @@ class IREDTrainer(nn.Module):
             "loss": total_loss.detach().cpu().item(),
             "mse_loss": mse_loss.detach().cpu().item(),
             "contrastive_loss": contrastive_loss.detach().cpu().item(),
-            "mean_energy_pos": e_pos.detach().mean().cpu().item(),
-            "mean_energy_neg": e_neg.detach().mean().cpu().item(),
-            "mean_k": k_idx.float().mean().detach().cpu().item(),
+            # "mean_energy_pos": e_pos.detach().mean().cpu().item(),
+            # "mean_energy_neg": e_neg.detach().mean().cpu().item(),
+            # "mean_k": k_idx.float().mean().detach().cpu().item(),
         }
         return total_loss, logs
 
