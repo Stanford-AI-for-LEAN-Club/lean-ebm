@@ -42,7 +42,7 @@ class IREDTrainer(nn.Module):
 
     def _energy(self, y, k_idx, condition):
         # make sure to be careful with the clamping here
-        return self.model(y, k_idx, condition)
+        return self.model(y.clamp(-1,1), k_idx, condition)
 
     def _sample_k_and_sigma(self, batch_size):
         k_idx = torch.randint(
@@ -67,7 +67,7 @@ class IREDTrainer(nn.Module):
                 grad = torch.autograd.grad(e.sum(), y_neg)[0]
                 y_neg = (y_neg - self.neg_refine_step_size * grad)
 
-        return y_neg.detach()
+        return y_neg
 
     def forward(self, x, condition):
         """
@@ -85,18 +85,22 @@ class IREDTrainer(nn.Module):
         sqrt_term = torch.sqrt(torch.clamp(1.0 - sigma * sigma, min=1e-8))
 
         # Positive noisy sample: y_hat = sqrt(1-sigma^2) * y* + sigma * eps
-        y_hat_pos = (sqrt_term * y_true + sigma * eps).detach().requires_grad_(True)
+        y_hat_pos = (sqrt_term * y_true + sigma * eps)\
+            .clamp(-1,1)\
+            .detach()\
+            .requires_grad_(True)
     
         # Score supervision: || grad_y E(x, y_hat, k) - eps ||^2
         e_pos = self._energy(y_hat_pos, k_idx, condition)
-        score_pred = torch.autograd.grad(
-            e_pos.sum(),
-            y_hat_pos,
-            create_graph=True,
-        )[0]
-        mse_loss = F.mse_loss(score_pred, eps)
+        # score_pred = torch.autograd.grad(
+        #     e_pos.sum(),
+        #     y_hat_pos,
+        #     create_graph=True,
+        # )[0]
+        mse_loss = F.mse_loss(e_pos, eps)
 
         # Contrastive shaping between positive and negative energies
+        """
         y_neg = self._make_negative(y_true, condition)
         y_hat_neg = (sqrt_term * y_neg + sigma * eps).detach()
         e_neg = self._energy(y_hat_neg, k_idx, condition)
@@ -104,6 +108,9 @@ class IREDTrainer(nn.Module):
         energy_stack = torch.stack([e_pos, e_neg], dim=1)
         target = torch.zeros(e_pos.size(0)).to(energy_stack.device)
         contrastive_loss = F.cross_entropy(-energy_stack, target.long(), reduction='mean')
+        """
+        e_neg = torch.tensor(0.0)
+        contrastive_loss = torch.tensor(0.0)
 
         #contrastive_loss = (e_pos - e_neg).mean() # <--  
 
@@ -150,15 +157,21 @@ class IREDTrainer(nn.Module):
             for _ in range(steps_per_landscape):
                 y_hat = y_hat.detach().requires_grad_(True)
                 energy = self._energy(y_hat, k_idx, condition)
-                grad = torch.autograd.grad(energy.sum(), [y_hat], create_graph=False)[0]
-                y_hat = (y_hat - step_size * grad).detach()
+                #grad = torch.autograd.grad(energy.sum(), [y_hat], create_graph=False)[0]
+                y_next = (y_hat - step_size * energy).detach()
 
                 #e_next = self._energy(y_next, k_idx, condition)
                 #accept = (e_next < energy).view(-1, *([1] * (y_hat.dim() - 1)))
                 #y_hat = torch.where(accept, y_next, y_hat.detach())
+                y_hat = y_next
+                
+                y_hat = y_hat.clamp(-1,1)
 
             #scale = torch.sqrt(torch.clamp(1.0 - sigma_k * sigma_k, min=1e-8))
             #scale_prev = torch.sqrt(torch.clamp(1.0 - sigma_prev * sigma_prev, min=1e-8))
             #y_hat = y_hat * (scale / torch.clamp(scale_prev, min=1e-8))
+            
+            
+            y_hat = y_hat.clamp(-1,1)
 
         return y_hat

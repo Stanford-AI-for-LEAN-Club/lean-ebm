@@ -31,8 +31,8 @@ ired:
 
   # loss weight
   mse_weight: 1.0
-  reg_coef: 1e-5
-  contrastive_weight: 1e-5
+  reg_coef: 1e-6
+  contrastive_weight: 1e-6
 
 memory:
   num_workers: 8
@@ -42,13 +42,13 @@ training:
   learning_rate: 3e-4
   weight_decay: 0
   gradient_accumulation_steps: 1
-  max_grad_norm: 2.0 # don't do massive updates
+  max_grad_norm: 1.0 # don't do massive updates
 
   # Training Params
-  epochs: 3
+  epochs: 10
   checkpoint_dir: "./checkpoints"
   save_steps: 200
-  batch_size: 16
+  batch_size: 32
   print_every: 4
   device: "cuda" # I am on a mac; MPS = Metal Performance Shader
 

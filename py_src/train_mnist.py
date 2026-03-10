@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import torch
 
 # Models
-from models.ired import IREDEnergy
+from models.ired import *
 from models.cnn import CNN
 
 # Training methods
@@ -39,7 +39,7 @@ def main(cfg: DictConfig):
     #dataset = get_digit_loader(dataset, 8)
 
     trainer = Trainer(
-        model=IREDTrainer(IREDEnergy(conf), conf),
+        model=IREDTrainer(IREDUnet(conf), conf),
         config=conf,
     )
 
