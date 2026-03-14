@@ -1,0 +1,37 @@
+model:
+  model_name: "ebt.pth"
+
+# Trainer config for ebt
+ebt:
+  step_min: 20
+  step_max: 30
+  alpha_min: 300
+  alpha_max: 400
+  clamp_grad: 0.03
+
+memory:
+  num_workers: 8
+
+training:
+  # Adam Optimization
+  learning_rate: 3e-4
+  weight_decay: 0.0
+  gradient_accumulation_steps: 1
+  max_grad_norm: 2.0 # don't do massive updates
+
+  # Training Params
+  epochs: 3
+  checkpoint_dir: "../checkpoints"
+  save_steps: 200
+  batch_size: 16
+  print_every: 4
+  device: "mps" # I am on a mac; MPS = Metal Performance Shader
+
+inference:
+  samples: 8
+
+wandb:
+  project: "EBM"
+  entity: "eshaanb"
+  name: "EBM"
+  notes: "EBM"

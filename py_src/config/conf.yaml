@@ -11,8 +11,8 @@ contrastive:
 
 # Trainer config for ebt
 ebt:
-  steps: 50
-  alpha: 10
+  steps: 40
+  alpha: 15
   clamp_grad: 0.03
 
 # Trainer config for ired
@@ -40,7 +40,7 @@ memory:
 training:
   # Adam Optimization
   learning_rate: 3e-4
-  weight_decay: 0
+  weight_decay: 0.0
   gradient_accumulation_steps: 1
   max_grad_norm: 1.0 # don't do massive updates
 
@@ -50,7 +50,7 @@ training:
   save_steps: 200
   batch_size: 32
   print_every: 4
-  device: "cuda" # I am on a mac; MPS = Metal Performance Shader
+  device: "mps" # I am on a mac; MPS = Metal Performance Shader
 
 inference:
   samples: 8
