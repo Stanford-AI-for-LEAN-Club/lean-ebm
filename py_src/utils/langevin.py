@@ -12,8 +12,8 @@ from dataclasses import dataclass
 # Gradeint method
 class GradientMethod: 
     NONE=0      # Don't keep the gradients of the class at all
-    LAST_STEP=1 # only keep the gradient of the very last step
-    ALL_STEPS=2 # keep the gradients through all steps
+    PER_STEP=1 # only keep the gradient of the very last step
+    PER_RUN=2 # keep the gradients through all steps
 
 # stops when we reach a certain number of steps
 @dataclass
@@ -28,6 +28,9 @@ class StopEnergyGradient:
     threshold:float
    
 StopMethod = Union[StopStep, StopEnergyGradient] 
+
+def soft_clamp(x, min_val, max_val):
+    return torch.sigmoid((x - min_val) / (max_val - min_val)) * (max_val - min_val) + min_val
 
 class LangevinTrainer (nn.Module):
     def __init__(self, *args, **kwargs):
@@ -64,15 +67,16 @@ class LangevinTrainer (nn.Module):
         # other variables
         num_steps = 0
         energy_history = []
+        grad_history = []
         last_energy = None
         
         while True:
             num_steps += 1 # incr steps
 
             # make sure to detach on predicted_x
-            if gradient_method == GradientMethod.ALL_STEPS: # "system one learning"
+            if gradient_method == GradientMethod.PER_STEP: # S1
                 x_sample = x_sample.detach().requires_grad_()
-            elif gradient_method == GradientMethod.LAST_STEP: # "system two learning"
+            elif gradient_method == GradientMethod.PER_RUN: # S2
                 x_sample = x_sample.requires_grad_()
 
             # 1. Forward pass to get energy
@@ -93,8 +97,8 @@ class LangevinTrainer (nn.Module):
             last_energy = current_energy
 
             should_create_graph = True if (
-                gradient_method == GradientMethod.ALL_STEPS or \
-                (gradient_method == GradientMethod.LAST_STEP and should_stop)
+                gradient_method == GradientMethod.PER_RUN or \
+                (gradient_method == GradientMethod.PER_STEP and should_stop)
             ) else False
             
             # calculate gradient
@@ -108,14 +112,21 @@ class LangevinTrainer (nn.Module):
             
             # Update x_sample
             noise = torch.randn_like(x_sample) * noise_scale
-            x_sample = torch.clamp(
-                x_sample - (0.5 * step_size * grads) + noise,
-                -1, 1
-            )
+            if gradient_method == GradientMethod.PER_STEP: 
+                x_sample = torch.clamp(
+                    x_sample - (0.5 * step_size * grads) + noise,
+                    -1, 1
+                )
+            elif gradient_method == GradientMethod.PER_RUN:  # S2 - preserve graph
+                x_sample = soft_clamp(
+                    x_sample - (0.5 * step_size * grads) + noise,
+                    -1, 1
+                )
             
             # store other values; debug
             if ret_extra:
-                energy_history.append(energy.detach().unsqueeze(0)) 
+                energy_history.append(energy.mean().item())
+                grad_history.append(grads.detach().flatten(1).norm(dim=1).mean().item())
                 # note that we always detach the energy!
             
             if should_stop:
@@ -123,7 +134,8 @@ class LangevinTrainer (nn.Module):
             
         if ret_extra:
             return x_sample, {
-                "energy_history": torch.cat(energy_history, dim=0).to(device),
+                "energy_history": energy_history,
+                "grad_norm_history": grad_history,
                 "num_steps": num_steps
             }
         else:

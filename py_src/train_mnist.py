@@ -12,7 +12,7 @@ from models.cnn import CNN
 
 # Training methods
 from ebm.contrastive import ContrastiveLearning
-from ebm.ebt import EBTTrainer
+from ebm.ebt import System1Trainer, System2Trainer
 from ebm.ired import IREDTrainer
 
 @hydra.main(version_base=None, config_path="./config/", config_name="conf")
