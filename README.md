@@ -68,4 +68,6 @@ ebt:
 
 ## Team
 
-William Peng, Holger Molin, Eshaan Barkataki, Matt Chen
+William Peng, Holger Molin, Eshaan Barkataki, Matt Chen, Brando Miranda, Sanmi Koyejo
+
+[Stanford AI for LEAN Club](https://aiforlean.org/)
