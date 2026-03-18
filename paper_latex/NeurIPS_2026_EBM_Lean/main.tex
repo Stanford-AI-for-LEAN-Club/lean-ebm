@@ -1,0 +1,120 @@
+% NeurIPS 2026 submission — Energy-Based Models for Lean 4 Theorem Proving
+\documentclass{article}
+
+% NeurIPS style (use neurips_2025 until neurips_2026.sty is released)
+\usepackage[preprint]{neurips_2025}
+
+% Standard packages
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{xurl}
+
+% Math
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+\usepackage[capitalize,noabbrev]{cleveref}
+
+% Listings (for Lean 4 / Python code)
+\usepackage{listings}
+\usepackage{xcolor}
+
+\definecolor{codeblue}{rgb}{0.0, 0.0, 0.8}
+\definecolor{codegray}{rgb}{0.5, 0.5, 0.5}
+\definecolor{codeorange}{rgb}{1.0, 0.49, 0.0}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  breakatwhitespace=false,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  frame=single,
+  keywordstyle=\color{codeblue},
+  commentstyle=\color{codegray},
+  stringstyle=\color{codeorange},
+}
+
+\lstdefinelanguage{Lean4}{
+  keywords={def, theorem, example, let, in, if, then, else, match, with, do, fun,
+            Type, Prop, Nat, Bool, Int, structure, inductive, open, import,
+            namespace, where, sorry, by, have, show, exact, apply, simp, rfl},
+  sensitive=true,
+  morecomment=[l]--,
+  morecomment=[s]{/-}{-/},
+  morestring=[b]",
+  literate=
+    {∀}{{$\forall$}}1 {∃}{{$\exists$}}1
+    {→}{{$\to$}}1 {↔}{{$\leftrightarrow$}}1
+    {≤}{{$\le$}}1 {≥}{{$\ge$}}1 {≠}{{$\neq$}}1
+    {⊢}{{$\vdash$}}1 {¬}{{$\neg$}}1
+    {∧}{{$\land$}}1 {∨}{{$\lor$}}1
+    {λ}{{$\lambda$}}1 {·}{{$\cdot$}}1
+    {ℕ}{{\texttt{Nat}}}1 {ℤ}{{\texttt{Int}}}1
+}
+
+% Theorem environments
+\theoremstyle{plain}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+% Author comments (strip before submission)
+\newcommand{\bmg}[1]{\textcolor{orange}{\textbf{[Brando: #1]}}}
+
+% Todo notes
+\usepackage[textsize=tiny]{todonotes}
+
+% ---------------------------------------------------------------
+
+\title{Energy-Based Models for Lean 4 Theorem Proving}
+
+\author{
+  Brando Miranda \\
+  Stanford Computer Science \\
+  \texttt{brando9@cs.stanford.edu} \\
+  \And
+  Sanmi Koyejo \\
+  Stanford Computer Science \\
+  \texttt{sanmi@cs.stanford.edu} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+TODO: write abstract.
+We propose using Energy-Based Models (EBMs) trained with Langevin dynamics as a unified
+policy and value function for MCTS-based Lean~4 theorem provers.
+Lower energy corresponds to more promising proof tactics, replacing the separate
+policy/value heads used in systems like DeepSeek-Prover with a single learned energy function.
+We prototype this idea on MNIST and benchmark on miniF2F.
+\end{abstract}
+
+\input{01_introduction}
+\input{02_related_work}
+\input{03_method}
+\input{04_experiments}
+\input{05_conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\appendix
+\input{99_appendix}
+
+\end{document}

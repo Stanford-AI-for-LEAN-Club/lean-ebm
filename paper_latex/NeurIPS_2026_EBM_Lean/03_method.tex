@@ -1,0 +1,24 @@
+% 03_method.tex — Method section
+
+\section{Method}
+\label{sec:method}
+
+TODO: write method.
+
+\subsection{Energy-Based Model Formulation}
+
+Let $E_\theta(x)$ denote the energy of a tactic sequence $x$ given a proof state.
+Lower energy indicates a more promising tactic.
+We train $E_\theta$ via contrastive divergence or EBT loss.
+
+\subsection{Langevin Dynamics for Tactic Sampling}
+
+Starting from noise $x_0 \sim \mathcal{N}(0, I)$, we iterate:
+\begin{equation}
+  x_{t+1} = x_t - \frac{\alpha}{2} \nabla_x E_\theta(x_t) + \sqrt{\alpha}\,\epsilon_t,
+  \quad \epsilon_t \sim \mathcal{N}(0, I).
+\end{equation}
+
+\subsection{MCTS Integration}
+
+TODO: describe how EBM energy replaces the value head and how sampling replaces the policy head.
