@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+@/dfs/scratch0/brando9/CLAUDE.md
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
@@ -63,3 +65,40 @@ All Python modules live under `py_src/lean_ebm/` and use relative imports.
 - `contrastive.steps` / `contrastive.alpha` / `contrastive.reg_coef` — Contrastive: steps, step size, L2 regularization weight
 - `training.num_episodes` / `training.epochs` — Outer episode count and inner epoch count per episode
 - `training.save_steps` / `training.print_every` — Checkpoint and console logging frequency (in optimizer steps)
+
+## API Keys
+
+Keys live at `~/keys/` (DFS-backed, shared across all servers):
+```bash
+export ANTHROPIC_API_KEY=$(cat ~/keys/anthropic_bm_key_koyejolab.txt)
+export OPENAI_API_KEY=$(cat ~/keys/openai_api_brandos_personal_key.txt)
+export HF_TOKEN=$(cat ~/keys/master_hf_token.txt)
+export WANDB_API_KEY=$(cat ~/keys/brandos_wandb_key.txt)
+```
+
+WandB is configured in `config.yaml` — set the key via env var (above) rather than hardcoding it.
+
+## GPU Usage
+
+Check free GPUs before launching training:
+```bash
+nvidia-smi --query-gpu=index,memory.used,memory.free,utilization.gpu --format=csv,noheader
+# Free = memory.used < 1000 MiB
+```
+
+`config.yaml` defaults to `device: "cuda"`. Change to `"mps"` (Apple Silicon) or `"cpu"` as needed.
+
+## File Documentation
+
+Always include a single-sentence TLDR comment at the top of each file describing what it does.
+
+## Experiment Conventions
+
+**Keep this file fresh.** When you move files, rename scripts, or refactor an experiment, update `CLAUDE.md` in the same commit.
+
+**README = design doc, scripts/ = runbooks.** Each experiment dir has a `README.md` (what/why/metrics/decisions) and a `scripts/` dir (how to run). Keep them in sync whenever files move.
+
+**When you refactor or move files:**
+1. Update the `Directory Structure` block in the experiment's `README.md`
+2. Update any path references in `README.md` and `CLAUDE.md`
+3. Archive superseded scripts to `scripts/archive/` — don't leave both copies active in `scripts/`
