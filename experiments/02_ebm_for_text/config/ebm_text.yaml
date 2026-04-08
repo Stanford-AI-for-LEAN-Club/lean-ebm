@@ -1,0 +1,72 @@
+# Hydra config for EBM-for-text: residual energy critic over structured search states.
+
+defaults:
+  - _self_
+
+# --- Mode: "train" or "search" ---
+mode: train    # set to "search" for inference
+
+# --- Energy model (cross-encoder with 3 heads) ---
+energy_model:
+  encoder_name: "microsoft/codebert-base"   # any HF encoder (codebert, roberta, etc.)
+  hidden_dim: 768
+  num_feedback_classes: 8   # error types: none, syntax, type, runtime, test_fail, elaboration, timeout, other
+  max_seq_length: 512
+  dropout: 0.1
+
+# --- Proposal model (causal LM) ---
+proposal:
+  model_name: "Salesforce/codegen-350M-mono"  # any HF causal LM
+  max_new_tokens: 256
+  temperature: 0.8
+  top_k: 50
+  top_p: 0.95
+  num_candidates: 8
+  load_in_8bit: false
+
+# --- Search (inference) ---
+search:
+  budget: 100           # max node expansions
+  beam_width: 10        # max frontier size
+  lambda_value: 0.5     # weight of value head in combined score
+  mode: code            # "code" or "lean"
+
+# --- Training ---
+training:
+  data_path: null       # path to JSONL training data
+  batch_size: 1         # examples per step (each example has 1 pos + N neg)
+  num_negatives: 7
+  learning_rate: 1.0e-5
+  weight_decay: 0.01
+  grad_clip: 1.0
+  epochs: 10
+  save_steps: 500
+  log_steps: 10
+  checkpoint_dir: checkpoints
+
+  # Loss weights (§4 of proposal)
+  ranking_weight: 1.0   # contrastive InfoNCE
+  value_weight: 0.5     # MSE on cost-to-go
+  feedback_weight: 0.3  # CE on error-type prediction
+
+# --- Tool adapter ---
+tool:
+  type: python           # "python" or "lean"
+  timeout: 30            # seconds per execution
+
+# --- Retrieval ---
+retrieval:
+  top_k: 5
+  max_context_tokens: 512
+
+# --- Device ---
+device: mps              # cuda, mps, cpu
+
+# --- W&B logging ---
+wandb:
+  enabled: false
+  project: ebm-for-text
+  entity: null
+
+# --- Checkpoints ---
+checkpoint: null          # path to load a checkpoint (for search or resumed training)
