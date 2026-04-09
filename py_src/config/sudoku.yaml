@@ -1,0 +1,78 @@
+# Configuration for 6x6 Sudoku IRED Training
+
+# Model configuration
+model:
+  steps: 1
+  alpha: 300
+  model_name: "sudoku_ired.pth"
+
+# Sudoku-specific configuration
+sudoku:
+  # Data generation
+  num_train_samples: 10000
+  num_test_samples: 50
+  train_mask_ratio: 0.5  # 50% of cells filled in training
+  test_mask_ratio: 0.4   # 40% of cells filled in testing (harder)
+
+  # Puzzle parameters
+  grid_size: 6
+  num_values: 7  # 0-6 where 0 = uncertain
+
+# IRED configuration for Sudoku
+sudoku_ired:
+  # Landscape parameters
+  num_landscapes: 50
+  energy_dim: 128
+
+  # Noise schedule
+  sigma_max: 0.95
+  sigma_min: 0.01
+
+  # Negative sample parameters
+  neg_corruption_scale: 0.3  # Corrupt 30% of filled cells
+  neg_refine_steps: 5
+  neg_refine_step_size: 0.15
+
+  # Loss weights
+  mse_weight: 1.0
+  contrastive_weight: 1.0
+  reg_coef: 0.01
+
+  # Probability noise
+  epsilon_prob: 0.1
+
+  # Inference parameters
+  inference_steps_per_landscape: 15
+  inference_step_size: 0.08
+
+# Memory configuration
+memory:
+  num_workers: 4
+
+# Training configuration
+training:
+  # Adam optimization
+  learning_rate: 2e-4
+  weight_decay: 0
+  gradient_accumulation_steps: 1
+  max_grad_norm: 1.0
+
+  # Training parameters
+  epochs: 20
+  checkpoint_dir: "./checkpoints/sudoku"
+  save_steps: 500
+  batch_size: 16  # Smaller batch due to larger tensors
+  print_every: 20
+  device: "cuda"  # Use "cuda" if available, else "cpu"
+
+# Inference configuration
+inference:
+  samples: 4
+  num_candidates: 5  # Number of solutions to generate
+
+# WandB configuration
+wandb:
+  project: "Sudoku-IRED"
+  entity: "eshaanb"
+  name: "sudoku_6x6"
+  notes: "IRED training for 6x6 Sudoku completion"

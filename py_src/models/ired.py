@@ -47,8 +47,9 @@ class IREDEnergy(nn.Module):
         self.k_embedding = nn.Embedding(num_landscapes, 10)
 
         # Projects fused features to energy_dim so E = ||f||^2 is always >= 0
+        # Note: conv trunk outputs 256 features (tested)
         self.energy_head = nn.Sequential(
-            nn.Linear(c_hid3*4 + 20, c_hid3*2),
+            nn.Linear(256 + 10 + 10, c_hid3*2),
             Swish(),
             nn.Linear(c_hid3*2, c_hid3),
             Swish(),
@@ -57,14 +58,13 @@ class IREDEnergy(nn.Module):
 
     def forward(self, x, k_idx, condition):
         # x: (B, 1, 28, 28), k_idx: (B,)
-        condition = F.one_hot(condition, num_classes=10)        
+        condition = F.one_hot(condition, num_classes=10)
         feat = self.conv_trunk(x)               # (B, c_hid3)
         k_feat = self.k_embedding(k_idx)        # (B, c_hid3)
         f = self.energy_head(torch.cat([feat,k_feat,condition], dim=-1))     # (B, energy_dim)
-        
-        # note that we take the magnitude as the output
-        #return (f ** 2).sum(dim=-1)             # (B,) — E = ||f||^2 >= 0
-        return f.squeeze(-1)
+
+        # Return squared L2 norm as energy: E = ||f||^2 >= 0
+        return (f ** 2).sum(dim=-1)             # (B,) — E = ||f||^2 >= 0
 
 import torch
 import torch.nn as nn
