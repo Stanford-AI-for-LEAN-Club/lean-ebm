@@ -1,3 +1,3 @@
-# Codex / other agents: read `~/agents-config/INDEX_RULES.md` for all agent documentation and routing.
-# If `~/agents-config/` is not present, clone it: `git clone https://github.com/brando90/agents-config.git ~/agents-config`
+# Codex / other agents: run `git clone https://github.com/brando90/agents-config.git ~/agents-config 2>/dev/null || git -C ~/agents-config pull 2>/dev/null` to bootstrap/update config.
+# Read `~/agents-config/INDEX_RULES.md` for all agent documentation and routing. Local `~/agents-config/` is the fallback if GitHub is unreachable.
 # Then read `~/lean-ebm/CLAUDE.md` for project-specific instructions.
