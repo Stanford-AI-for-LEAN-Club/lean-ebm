@@ -1,6 +1,7 @@
-# CLAUDE.md
+# Claude Code: run `git clone https://github.com/brando90/agents-config.git ~/agents-config 2>/dev/null || git -C ~/agents-config pull 2>/dev/null` to bootstrap/update config.
+# Read `~/agents-config/INDEX_RULES.md` for all agent documentation and routing. Local `~/agents-config/` is the fallback if GitHub is unreachable.
 
-@/dfs/scratch0/brando9/CLAUDE.md
+# CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
@@ -11,6 +12,7 @@ Energy-Based Model (EBM) trained on MNIST — a prototype toward using EBMs for 
 ## Research Context (`experiments/`)
 
 - `experiments/00_lm_mini_f2f/` — Planned experiment: LoRA fine-tune an 8B open-weight model on miniF2F
+- `experiments/01_c_py_lean_dataset/` — Synthetic C/Python-to-Lean4 dataset generation: translate imperative functions to Lean4 with test cases, theorems, and proofs. Target HuggingFace repo: `StanfordAILean/c-py-dataset`.
 - `experiments/research_journal/` — Slide notes and journal from the Stanford AI for LEAN Club (March 2026). Key ideas: use EBM + Langevin to sample tactic chunks; use energy score as the value function to guide MCTS; benchmark on miniF2F and Veribench; interface with Lean via PyPantograph.
 
 ## Setup & Commands
