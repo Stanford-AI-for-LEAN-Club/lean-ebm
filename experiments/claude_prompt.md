@@ -161,3 +161,39 @@ Validation pipeline (run in order, abort step on failure):
 5. lean --check <theorems + proofs>        → fix proofs (max 5 retries with error feedback)
 6. If proof still fails → downgrade to `sorry`, flag record as "proof_incomplete"
 
+## Theorem Generation
+
+Theorems must be **substantive** and **universally quantified**. Collectively they should constitute a correctness specification: a reviewer should be able to reconstruct the function's behavior from the theorem statements alone, and an incorrect implementation should fail at least one.
+
+**Reject a theorem if** its proof is `native_decide` or `rfl` on concrete literals, or if it's trivially true for any implementation.
+
+**Each function's theorems should cover as many of the following as apply:**
+- Algebraic laws: commutativity, idempotency, monotonicity, roundtrip laws
+- Agreement with Lean stdlib where an equivalent exists
+- Output invariants: range, length, sortedness, etc.
+- Full case characterization across all input regions
+
+**Examples:**
+```lean
+-- BAD: point evaluation disguised as a theorem
+theorem abs_val_neg_one : abs_val (-1) = (1 : Int32) := by native_decide
+
+-- GOOD: universally quantified properties that characterize the function
+theorem abs_val_nonneg (x : Int) : abs_val x ≥ 0 := by
+  simp [abs_val]; split_ifs <;> omega
+theorem abs_val_agrees_with_stdlib (x : Int) : abs_val x = x.natAbs.cast := by
+  simp [abs_val, Int.natAbs]; split_ifs <;> omega
+
+-- BAD: unproven stub
+theorem gcd_comm (a b : Nat) : gcd a b = gcd b a := by sorry
+
+-- GOOD: proven agreement with verified stdlib
+theorem gcd_agrees_with_stdlib (a b : Nat) : gcd a b = Nat.gcd a b := by
+  induction a, b using Nat.gcd.induction with
+  | H1 n => simp [gcd, Nat.gcd]
+  | H2 m n hm ih => simp [gcd, Nat.gcd, Nat.mod_def, ih]
+```
+
+**When a proof is out of reach:** state the theorem correctly, prove what you can, and mark the rest `sorry` with `"proof_incomplete": true`. Never downgrade a correct statement to something trivial just to avoid `sorry`.
+
+
