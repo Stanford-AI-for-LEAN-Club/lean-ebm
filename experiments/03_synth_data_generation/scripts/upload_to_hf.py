@@ -12,6 +12,8 @@ def main():
     # Collect all records
     all_records = []
     for jsonl_path in sorted(glob.glob(os.path.join(output_dir, "*.jsonl"))):
+        if "combined_dataset" in os.path.basename(jsonl_path):
+            continue
         batch_name = os.path.basename(jsonl_path).replace(".jsonl", "")
         with open(jsonl_path) as f:
             for line_num, line in enumerate(f, 1):
