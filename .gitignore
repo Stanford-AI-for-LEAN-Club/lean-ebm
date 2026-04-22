@@ -27,3 +27,13 @@ data/
 checkpoints/
 outputs/
 
+# Lean scratch files (root only)
+/test*.lean
+/val_*.lean
+
+# VS Code workspace
+*.code-workspace
+
+# Compiled binaries
+experiments/**/temp_*_validation
+
