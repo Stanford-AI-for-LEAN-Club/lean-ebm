@@ -196,4 +196,52 @@ theorem gcd_agrees_with_stdlib (a b : Nat) : gcd a b = Nat.gcd a b := by
 
 **When a proof is out of reach:** state the theorem correctly, prove what you can, and mark the rest `sorry` with `"proof_incomplete": true`. Never downgrade a correct statement to something trivial just to avoid `sorry`.
 
+## Proof Complexity Guidelines
+
+Theorems and their proofs should be **substantive and non-trivial**. Avoid high-level automation tactics that obscure proof structure — the goal is proofs that are readable, instructive, and genuinely demonstrate correctness reasoning.
+
+### Preferred Proof Strategies
+
+**Explicit structural reasoning** should be the default. Build proofs step-by-step using `induction`, `cases`, `rcases`, `have`, `rw`, `calc`, and `apply` with named lemmas. Introduce variables and hypotheses explicitly with `intro`. Use `calc` blocks for chains of equalities/inequalities, and `have h : ... := ...` to name intermediate facts rather than collapsing everything into one line.
+
+`omega`, `ring`, and `norm_cast` are fine for **closing leaf goals** after the proof has been manually reduced — not as top-level one-liners.
+
+### Restricted Tactics (Avoid in Final Proofs)
+
+The following hide proof structure and are **banned in final proofs**. They are permitted only during interactive exploration:
+
+| Tactic | Alternative |
+|---|---|
+| `simp` (no arguments) | `simp only [lemma1, lemma2]` or `rw` |
+| `simp_all` | Targeted `rw` + `have` steps |
+| `aesop`, `tauto`, `grind`, `auto` | Explicit `cases` + `apply` chains |
+| `native_decide`, `decide` | Proper inductive proof |
+| `apply?` / `exact?` / `rw?` | Replace with the found lemma explicitly |
+
+### Proof Shape Guidelines
+
+```lean
+-- GOOD: Explicit, structured, readable
+theorem array_sum_append (a b : Array Int) :
+    array_sum (a ++ b) = array_sum a + array_sum b := by
+  induction a using Array.induction_on with
+  | empty => simp only [Array.empty_append, array_sum_empty, Int.zero_add]
+  | push xs x ih =>
+    rw [Array.push_append_eq, array_sum_push, array_sum_push, ih]
+    ring
+
+-- BAD: Automation one-liner — proves nothing to the reader
+theorem array_sum_append (a b : Array Int) :
+    array_sum (a ++ b) = array_sum a + array_sum b := by
+  simp_all [array_sum, Array.foldl_append]
+```
+
+When a proof genuinely requires a difficult step, isolate it with `have` and mark **only that step** `sorry`, leaving the rest of the skeleton intact:
+
+```lean
+theorem hard_theorem (n : Nat) : complex_property n := by
+  have key : intermediate_fact n := by
+    sorry  -- proof_incomplete: requires strengthened induction hypothesis
+  exact derive_from_key key
+```
 
