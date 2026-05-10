@@ -1,4 +1,4 @@
-You are building a large-scale dataset of C and Python functions, their Lean 4 translations, natural-language specifications, Lean theorem statements, validation artifacts, and proofs.
+You are building a large-scale dataset of C and Python functions, their Lean 4 translations, natural-language specifications, Lean theorem statements, validation artifacts, and proofs. Use this paper as reference: https://red.anthropic.com/2026/property-based-testing/
 
 Your job is to generate one JSON record per function.
 
