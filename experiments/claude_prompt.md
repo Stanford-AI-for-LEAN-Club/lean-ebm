@@ -1,247 +1,404 @@
-# Synthetic C-to-Lean4 Dataset Generation
+You are building a large-scale dataset of C and Python functions, their Lean 4 translations, natural-language specifications, Lean theorem statements, validation artifacts, and proofs.
 
-We are creating a dataset containing C and Python functions, their translations into Lean4, test cases that verify their faithful representation in Lean, theorems about the Lean algorithm that prove its correctness, and proofs of those theorems.
+Your job is to generate one JSON record per function.
 
-## Input
+The core principle is PROPERTY-FIRST, NOT PROOF-FIRST:
+1. Understand the original function and its context.
+2. Generate a comprehensive but nonredundant set of natural-language properties in English.
+3. Accept only properties that are evidence-grounded, non-vacuous, and useful.
+4. Translate the source function to Lean 4.
+5. Translate the accepted natural-language properties into Lean theorem statements.
+6. Compile and validate everything.
+7. Prove as many theorems as possible in Lean 4 without using vacuous or trivial proofs.
+8. Preserve all theorem statements even when proofs fail.
+9. Split the dataset based on whether a designated Claude prover configuration can prove the theorems, but never drop theorem statements from the record.
 
-C code and Python code. Scrape from the internet. For example, use https://huggingface.co/datasets/bigcode/the-stack for a huge list of C and Python files and functions.
+Your outputs must be suitable for a formal verification dataset, not just for testing.
 
-## Output
+GENERAL GOALS
 
-For each function in C and Python, generate:
+Generate dataset entries only for functions whose behavior can be meaningfully specified and modeled in Lean.
+Prioritize deterministic, side-effect-light, semantically clear functions with useful names, docstrings/comments, tests, companion operations, or obvious reference implementations.
+Skip or flag functions whose intended semantics are too subtle, too underdocumented, or too dependent on hidden state to generate reliable theorem statements.
 
-1. **Lean translation** of the C and Python code
-2. **Test cases** of the same function in C and Python and the same test cases in Lean
-3. **Theorem statements** in Lean that prove major properties of the behavior of the C and Python code
-4. **Theorem proofs** in Lean about those above statements
+FUNCTION ELIGIBILITY
 
-The schema will be, for each function, output a JSON record with these exact keys:
-- "language": "Python" or "C" (string)
-- "source": original source function (string)
-- "lean_translation": Lean4 translation (string)
-- "tests": C or Python test harness as a complete compilable .c/.py file (string) 
-- "lean_tests": Lean4 #eval / #check test cases (string)
-- "theorems": list of { "name": string, "statement": string, "proof": string }
-- "deps_fully_translated": list of callee names that were axiomatized
-- "axiomatized_deps": list of { "name": string, "lean_axiom": string }. 
-- "skip_reason": null | string (if skipped, why)
+Skip a function if any of the following apply, unless a bounded and explicit model is clearly possible:
+- filesystem, socket, pipe, subprocess, fd-based, or network I/O
+- inline assembly, compiler intrinsics, signal handlers, thread synchronization primitives
+- hidden mutable global state not passed explicitly as input/output state
+- uncontrolled malloc/free/realloc patterns
+- function pointers requiring dynamic dispatch
+- variadic functions
+- wide strings, packed structs, unions with layout-sensitive semantics, opaque pointer casts, or other platform-specific behavior that cannot be modeled faithfully
+- heavy floating-point iterative algorithms without a clear bounded specification
+- semantics that are underdocumented and cannot be triangulated from code, callers, comments, tests, or mathematics
 
-After you are done, write the huggingface repo: https://huggingface.co/datasets/StanfordAILean/c-py-dataset. Use your HF_TOKEN!
+For C, prefer:
+- scalar arithmetic and comparisons
+- array/list algorithms
+- string/byte-buffer utilities
+- struct transformations
+- search, selection, sorting, parsing, formatting, normalization, checksum-like pure computations
+- pointer-plus-length APIs that can be modeled as arrays and pure state transformers
 
-## Filtration of C Files
+For Python, prefer:
+- pure functions over ints, bools, strings, lists, tuples, dicts, sets, arrays, and dataclasses
+- parsing, formatting, normalization, encoding/decoding, collection transforms, numerical utilities, graph/list helpers, and deterministic algorithms
+- functions with clear equivalence to stdlib or companion APIs
 
-Figure out what to prove and what not to prove:
-- Don't prove functions that rely on "states" or OS-level functions (e.g., network calls, system calls)
-- Not possible to read files or call network calls in Lean
-- You can prove stuff about pointers and memory by defining an explicit map
-- Etc. (not an exhaustive list; think from the perspective of proving something in Lean)
+UNDERSTAND THE TARGET BEFORE WRITING PROPERTIES
 
-Specifically, SKIP a function if it:
-- calls malloc/free/realloc without a bounded, analyzable pattern
-- uses FILE*, sockets, pipes, or any fd-based I/O
-- contains inline assembly or compiler intrinsics
-- relies on global mutable state that isn't passed as an argument
-- uses function pointers in a way that requires dynamic dispatch
-- is variadic (va_list, ...)
-- Think of other conditions!
+For each function, build an evidence dossier from:
+- the function signature and type information
+- the function name
+- docstrings and comments
+- the full source body
+- neighboring helper functions
+- callers and call sites
+- existing unit tests / doctests / examples
+- companion functions such as encode/decode, push/pop, parse/format, add/remove, serialize/deserialize
+- a trustworthy reference implementation, standard library equivalent, or mathematically simpler specification, when available
 
-## Preprocessing of C/Py files
+Do not infer properties only from the implementation details of the translated Lean function. The natural-language properties must be derived from the original source and its context.
 
-For each C/Py function, if it calls subfunctions, axiomatize those and assume that those subfunctions are correct. 
+NATURAL-LANGUAGE PROPERTY GENERATION
 
-1. Parse all C/Py files and build a call graph
-2. Topologically sort functions (leaves first)
-3. Process leaves first — they have no dependencies, translate fully
-4. For each non-leaf function:
-   a. Check if all callees have been fully translated → use the Lean translation
-   b. If a callee was skipped (OS call, etc.) → generate an axiom for it
-   c. If a callee is outside the dataset → generate an axiom for it
-5. Tag each record with:
-   - "deps_fully_translated": bool
-   - "axiomatized_deps": list of callee names that were axiomatized
+Create a first-class English-only property bank before generating Lean theorem statements.
 
-## Tips for conversion from C --> Lean
-PROVE with a memory model if it:
-- takes a pointer + length pair (model as Array or Fin-indexed function)
-- does in-place mutation on a struct (model as a pure function returning a new struct)
+Each natural-language property must be:
+- written as clear English sentences
+- behaviorally precise
+- universally quantified in spirit, not an example on literals
+- accompanied by English preconditions
+- accompanied by evidence explaining why the property is justified
+- accompanied by a short note explaining why the property is useful for correctness
+- accompanied by at least one plausible wrong behavior or mutant it is meant to rule out
 
-Memory model convention:
-- C arrays of length n → Lean `Array α` or `Fin n → α`
-- Structs → Lean `structure` with identical field names
-- Pointer mutation → pure functions returning (new_state, return_value)
-- NULL pointer → `Option α`
-- Integer overflow → use `UInt32`/`UInt64` (wrapping semantics) not `Nat`
+The property bank must be comprehensive across all applicable correctness dimensions, but nonredundant within each dimension.
 
-Integer, the conversion process must be:
-- int, long, short → use UInt32/UInt64/UInt16 (wrapping semantics) for bit-exact behavior
-- unsigned variants → same UInt types (already unsigned in Lean)
-- signed overflow is UB in C → document assumption that inputs avoid it, OR
-  model as Int32/Int64 and add a precondition `h : x ∈ Set.Icc Int32.min Int32.max`
-- size_t → USize (platform-width, wrapping)
-- char used as integer → UInt8
-- Bitwise ops (&, |, ^, ~, <<, >>) → use Lean's corresponding UInt ops, NOT Nat/Int
-- Right shift of signed integers is UB in C → axiomatize or restrict to unsigned
+Look for the following high-value property families whenever they apply:
+- output invariants
+- structural invariants such as length, shape, key set, ordering, uniqueness, sortedness, partitioning, permutation, or preservation
+- round-trip laws such as decode(encode(x)) = x or parse(format(x)) = x
+- inverse-operation laws such as add/remove, push/pop, insert/delete
+- agreement with a reference implementation or standard library equivalent
+- equivalence between optimized and simple implementations
+- algebraic laws such as idempotence, commutativity, associativity, distributivity, monotonicity
+- case-partition characterizations over all important input regions
+- metamorphic / relational properties tying multiple executions together
+- boundary and error behavior
+- frame-style properties for state transformers: which parts of the modeled state are changed and which are preserved
+- numerical range, monotonicity, and approximation properties for floating point, using explicit epsilons where required
+- companion-function properties spanning multiple functions, not only single-function facts
 
-**Floats** the conversion process must be:
-- float  → Float32  (if available in your Lean version) or axiomatize as opaque
-- double → Float    (Lean's built-in IEEE 754 double)
-- Do NOT model floats as ℝ or ℚ — this breaks test case consistency
-- NaN, ±Inf → Lean Float handles these; explicitly test Float.isNaN, Float.isInf
-- Floating-point equality in theorems → avoid (=); use |a - b| ≤ ε with an explicit ε
-- Functions that are only correct up to rounding → state theorems as:
-    |lean_result - exact_result| ≤ n * Float.epsilon
-- fma, sqrt, ceil, floor, round → use Lean's Float.sqrt etc. or axiomatize
-- Do NOT attempt to prove termination/correctness of iterative float algorithms
-  (e.g., Newton-Raphson) without a convergence bound as a precondition
+When outputs are relational rather than unique, state the intended equivalence relation in English. Do not force an exact-output property when correctness is naturally “up to permutation”, “up to normalization”, “up to key-order”, “up to semantic equivalence”, etc.
 
-**Characters and Strings**: the conversion process must be:
-- char        → UInt8 (treat as byte, not Unicode)
-- char*       → Array UInt8 (for byte buffers) or String (for null-terminated text)
-- char* with explicit length n → Array UInt8 with a side condition h : arr.size = n
-- Null-terminated strings → model as Array UInt8 with a terminator proof:
-    ∃ i, i < arr.size ∧ arr[i] = 0 ∧ ∀ j < i, arr[j] ≠ 0
-- String mutation (strcpy, strcat) → pure function returning new Array UInt8
-- wchar_t / wide strings → SKIP (too platform-dependent)
+If a strong reference implementation exists, prioritize that theorem family highly.
+If no exact oracle is available, prioritize relational and metamorphic properties.
 
-**Booleans**: The conversion process must be:
-- bool / _Bool → Bool
-- C enums with contiguous values → Lean inductive with a toNat / ofNat roundtrip lemma
-- C enums used as bitmasks → UInt32, not inductive
-- -1 used as sentinel / error code → Option (return None for error cases)
+Do not include “does not crash” or “returns some value” as a primary theorem unless the function is fundamentally specified only by totality/safety on valid inputs. For theorem datasets these are usually too weak on their own.
 
-**Structs and Unions**: the conversion process must be:
-- Structs → Lean `structure` with identical field names and translated field types
-- Nested structs → nested Lean structures (inline, not by pointer)
-- Pointer-to-struct (pass by reference) → function takes and returns the struct value
-- Unions → SKIP by default; or model the active variant as an `inductive` with one
-  constructor per member, adding a note that this loses aliasing semantics
-- Bitfields → model as UInt with explicit mask/shift accessors + roundtrip lemmas
-- Packed structs / __attribute__((packed)) → SKIP (layout is implementation-defined)
+PROPERTY ACCEPTANCE RUBRIC
 
-**Pointers**: 
-- T*  (non-null, single element) → just T (pass by value, return new value)
-- T*  (nullable)                 → Option T
-- T** (out-parameter)            → function returns (T, rest_of_state) as a product
-- void* (generic pointer)        → SKIP or axiomatize the specific cast being used
-- Function pointers              → SKIP (requires higher-order axiomatization; flag for manual review)
-- Pointer arithmetic / arrays    → Array T with explicit index bounds proofs
-- restrict keyword               → safe to ignore (it's an optimizer hint, not semantic)
+A candidate natural-language property is ACCEPTED only if all of the following hold:
 
-**Arrays and Buffers**:
-- Fixed-size array T[N]          → Fin N → T  (enables index-exhaustion proofs)
-- Variable-length array T[n]     → Array T with side condition h : arr.size = n
-- Multi-dimensional T[M][N]      → Fin M → Fin N → T
-- Out-of-bounds access is UB     → add precondition h : i < n to every theorem
-- Stack buffer vs heap buffer    → treat identically (irrelevant to functional behavior)
+1. Groundedness
+It is strongly supported by docs, comments, naming, callers, tests, companion APIs, or domain mathematics.
 
-**Numerical Edge Cases to always test**:
-Generate test cases covering:
-- 0, 1, -1 for every integer argument
-- INT_MAX (2147483647), INT_MIN (-2147483648), UINT_MAX (4294967295)
-- Powers of 2 and powers of 2 minus 1 (boundary of bitwise ops)
-- NaN, +Inf, -Inf, -0.0, Float.epsilon, largest finite float for every float argument
-- Empty array (size = 0), single-element array, two-element array
-- Arrays where all elements are equal
-- Null / None for every optional pointer argument
+2. Non-vacuity
+Its preconditions are satisfiable.
+Its conclusion is not a tautology.
+It is not true for every function of the same type.
+It is not merely a point example on a concrete literal.
+It is not only a restatement of the type signature.
+It is not just “the function returns without error” unless that is a meaningful safety theorem.
 
-## Validation
+3. Discriminative power
+The property would fail for at least one plausible mutant or wrong implementation.
+Typical mutants include:
+- wrong comparison direction
+- missing edge case branch
+- off-by-one index or bound
+- forgetting to update length
+- dropping/duplicating elements
+- non-preservation of key set
+- reversing order
+- returning unsorted output
+- incorrect handling of empty / singleton / zero / negative / null / NaN / infinity cases
+- changing one field when other fields should be preserved
+- using a faster but wrong formula
 
-Ensure that the generated proofs:
+4. Orthogonality
+The property adds genuinely new behavioral coverage rather than repeating a stronger accepted property.
 
-1. **Translation correctness**: Ensure that the translations are correct by calling the Lean compiler
-2. **Test case consistency**: Ensure that the translation matches test cases for the C/Py function and the Lean translation of the C/Py function. If there are discrepancies between the test cases in Lean and C, rewrite the Lean function to resolve them.
-3. **Proof correctness**: Ensure that the proofs are correct by calling the Lean compiler
-4. **Theorem coverage**: Ensure that the generated theorems about the Lean function cover all of the major properties that the algorithm would need to have to be considered correct.
+5. Formalizability
+The property can be expressed against the chosen Lean model of the function and its state.
 
-Validation pipeline (run in order, abort step on failure):
-1. lean --check <lean_translation>          → fix syntax errors (max 3 retries)
-2. gcc -o test && ./test                    → fix C test harness (run python for python test cases)
-3. lean --check <lean_tests>               → fix Lean test cases
-4. If C/Py and Lean tests disagree on any input → rewrite Lean translation, restart from 1.
-5. lean --check <theorems + proofs>        → fix proofs (max 5 retries with error feedback)
-6. If proof still fails → downgrade to `sorry`, flag record as "proof_incomplete"
+If a property fails the rubric, reject it or rewrite it. Do not keep weak properties just to inflate theorem counts.
 
-## Theorem Generation
+ANTI-VACUITY CHECKS YOU MUST RUN
 
-Theorems must be **substantive** and **universally quantified**. Collectively they should constitute a correctness specification: a reviewer should be able to reconstruct the function's behavior from the theorem statements alone, and an incorrect implementation should fail at least one.
+Before translating a property to Lean theorem form:
+- produce at least one witness satisfying its preconditions
+- generate executable checks for the property against the original source implementation
+- if feasible, generate a few simple semantic mutants and confirm that the property rejects at least one of them
+- if the property passes on the original function but also passes on obvious wrong mutants, mark it too weak and refine it
+- check whether the property is subsumed by stronger accepted properties; if yes, keep only if it is independently useful as a proof lemma
 
-**Reject a theorem if** its proof is `native_decide` or `rfl` on concrete literals, or if it's trivially true for any implementation.
+TRANSLATING SOURCE CODE TO LEAN 4
 
-**Each function's theorems should cover as many of the following as apply:**
-- Algebraic laws: commutativity, idempotency, monotonicity, roundtrip laws
-- Agreement with Lean stdlib where an equivalent exists
-- Output invariants: range, length, sortedness, etc.
-- Full case characterization across all input regions
+Translate the original function faithfully to Lean 4 with semantics chosen to preserve behavior:
+- fixed-width integers should use Lean UInt types where wrapping behavior matters
+- signed overflow in C must either be excluded by preconditions or explicitly modeled
+- floats must remain floats; do not model them as reals or rationals
+- arrays and buffers should be modeled as Array or Fin-indexed collections
+- structs should become Lean structures
+- pointer mutation should become pure state-threading returning updated structures/arrays/state
+- nullable pointers should become Option where appropriate
+- pointers-plus-length should become arrays plus explicit size/bounds conditions
+- string/byte buffer behavior must preserve null-termination or explicit length semantics as appropriate
 
-**Examples:**
-```lean
--- BAD: point evaluation disguised as a theorem
-theorem abs_val_neg_one : abs_val (-1) = (1 : Int32) := by native_decide
+If faithful modeling is not possible, skip or partially axiomatize dependencies explicitly.
 
--- GOOD: universally quantified properties that characterize the function
-theorem abs_val_nonneg (x : Int) : abs_val x ≥ 0 := by
-  simp [abs_val]; split_ifs <;> omega
-theorem abs_val_agrees_with_stdlib (x : Int) : abs_val x = x.natAbs.cast := by
-  simp [abs_val, Int.natAbs]; split_ifs <;> omega
+DEPENDENCY HANDLING
 
--- BAD: unproven stub
-theorem gcd_comm (a b : Nat) : gcd a b = gcd b a := by sorry
+Build a call graph.
+Process leaves first.
+For non-leaf functions:
+- if all callees are already translated, use their translations
+- if a callee is outside the dataset or skipped, generate an explicit Lean axiom only for that callee
+- record which dependencies were fully translated and which were axiomatized, and why
 
--- GOOD: proven agreement with verified stdlib
-theorem gcd_agrees_with_stdlib (a b : Nat) : gcd a b = Nat.gcd a b := by
-  induction a, b using Nat.gcd.induction with
-  | H1 n => simp [gcd, Nat.gcd]
-  | H2 m n hm ih => simp [gcd, Nat.gcd, Nat.mod_def, ih]
-```
+NATURAL-LANGUAGE PROPERTIES TO LEAN THEOREMS
 
-**When a proof is out of reach:** state the theorem correctly, prove what you can, and mark the rest `sorry` with `"proof_incomplete": true`. Never downgrade a correct statement to something trivial just to avoid `sorry`.
+Translate only ACCEPTED natural-language properties into Lean theorem statements.
 
-## Proof Complexity Guidelines
+Important:
+- one NL property may translate into one theorem, several theorems, helper predicates, or helper lemmas
+- do not force bad theorem granularity
+- preserve the meaning of the English property
+- use helper predicates for notions like sortedness, permutation, valid string, valid buffer, frame condition, semantic equivalence, approximation within epsilon, etc.
+- if a property naturally decomposes into multiple orthogonal Lean theorems, do that
+- if a property is relational or coupled, do not over-fragment it into misleadingly independent atoms
 
-Theorems and their proofs should be **substantive and non-trivial**. Avoid high-level automation tactics that obscure proof structure — the goal is proofs that are readable, instructive, and genuinely demonstrate correctness reasoning.
+The theorem collection for a function should be a characteristic specification:
+a reviewer should be able to reconstruct the intended behavior from the natural-language property bank plus theorem statements alone, and a wrong implementation should fail at least one accepted theorem.
 
-### Preferred Proof Strategies
+THEOREM QUALITY BAR
 
-**Explicit structural reasoning** should be the default. Build proofs step-by-step using `induction`, `cases`, `rcases`, `have`, `rw`, `calc`, and `apply` with named lemmas. Introduce variables and hypotheses explicitly with `intro`. Use `calc` blocks for chains of equalities/inequalities, and `have h : ... := ...` to name intermediate facts rather than collapsing everything into one line.
+Reject or rewrite a theorem if:
+- it is a literal test disguised as a theorem
+- it is trivial for any implementation
+- its hypotheses are unsatisfiable
+- it only states type-level well-formedness with no behavioral content
+- it is weaker than already accepted theorems with no proof-engineering value
+- it exists only to make proof search easier while adding no specification value
 
-`omega`, `ring`, and `norm_cast` are fine for **closing leaf goals** after the proof has been manually reduced — not as top-level one-liners.
+Preferred theorem families:
+- reference/spec equivalence
+- round-trip / inverse laws
+- output invariants
+- algebraic laws
+- complete case analysis over input regions
+- boundary and error semantics
+- structural preservation
+- frame and state-change characterization
+- numerical bounds / monotonicity / approximation
 
-### Restricted Tactics (Avoid in Final Proofs)
+For list/set/map like functions, always consider:
+- size/length behavior
+- membership / key-set behavior
+- order/sortedness behavior
+- preservation / permutation behavior
+- reconstruction laws
 
-The following hide proof structure and are **banned in final proofs**. They are permitted only during interactive exploration:
+For parsers/formatters/serializers/encoders, always consider:
+- round-trip laws
+- normalization laws
+- accepted-language / canonical-form invariants
 
-| Tactic | Alternative |
-|---|---|
-| `simp` (no arguments) | `simp only [lemma1, lemma2]` or `rw` |
-| `simp_all` | Targeted `rw` + `have` steps |
-| `aesop`, `tauto`, `grind`, `auto` | Explicit `cases` + `apply` chains |
-| `native_decide`, `decide` | Proper inductive proof |
-| `apply?` / `exact?` / `rw?` | Replace with the found lemma explicitly |
+For pointer/state-transforming C functions, always consider:
+- state fields modified
+- state fields preserved
+- return/state correspondence
+- bounds and null handling
+- aliasing assumptions only if explicitly modeled
 
-### Proof Shape Guidelines
+VALIDATION AND COUNTEREXAMPLE LOOP
 
-```lean
--- GOOD: Explicit, structured, readable
-theorem array_sum_append (a b : Array Int) :
-    array_sum (a ++ b) = array_sum a + array_sum b := by
-  induction a using Array.induction_on with
-  | empty => simp only [Array.empty_append, array_sum_empty, Int.zero_add]
-  | push xs x ih =>
-    rw [Array.push_append_eq, array_sum_push, array_sum_push, ih]
-    ring
+Run the following loop in order:
 
--- BAD: Automation one-liner — proves nothing to the reader
-theorem array_sum_append (a b : Array Int) :
-    array_sum (a ++ b) = array_sum a + array_sum b := by
-  simp_all [array_sum, Array.foldl_append]
-```
+1. Compile the Lean translation.
+2. Run source-language executable tests, including property-oriented randomized checks.
+3. Run Lean executable tests or evaluations on the Lean translation.
+4. Compare source and Lean behavior on the same test inputs.
+5. Compile Lean theorem statements before proofs.
+6. Attempt proofs.
+7. If source and Lean disagree, fix the Lean translation and restart validation.
+8. If a property fails, decide whether:
+   - the original function is wrong,
+   - the property is wrong,
+   - the generated inputs violate real preconditions,
+   - or the Lean translation is wrong.
+   Reflect and revise accordingly.
 
-When a proof genuinely requires a difficult step, isolate it with `have` and mark **only that step** `sorry`, leaving the rest of the skeleton intact:
+For sparse-precondition properties, do not rely on naive random generation with high discard rates.
+Instead, synthesize generators or constructors that satisfy the preconditions directly.
 
-```lean
-theorem hard_theorem (n : Nat) : complex_property n := by
-  have key : intermediate_fact n := by
-    sorry  -- proof_incomplete: requires strengthened induction hypothesis
-  exact derive_from_key key
-```
+Always test important edge cases:
+- integer zero, one, minus one where meaningful
+- min/max values and powers of two boundaries
+- empty, singleton, and small collections
+- repeated elements
+- null / None / optional absence cases
+- NaN, infinities, negative zero, epsilon-scale values for floats
+- boundary lengths and indices
+- malformed but representable inputs when error behavior is part of the contract
 
+PROOF POLICY
+
+Attempt to prove as many accepted theorem statements as possible in Lean 4.
+
+However:
+- never weaken a correct theorem statement just to get a proof
+- never replace a strong theorem with a trivial theorem to improve proof counts
+- never count a vacuous or trivial proof as success
+
+BANNED AS FINAL “PROOFS” UNLESS THE THEOREM IS GENUINELY SUBSTANTIVE
+- native_decide / decide for concrete or shallow statements
+- rfl if the theorem merely unfolds to itself and does not constrain behavior meaningfully
+- trivial simp on literals
+- automated proofs that hide all proof structure
+- proofs that exploit unsatisfiable hypotheses
+- proofs that ignore the important returned value or updated state
+
+Preferred proof style:
+- explicit intros
+- cases / induction where appropriate
+- named intermediate facts with have
+- rw, calc, apply, exact with explicit lemmas
+- bounded use of omega, ring, norm_num, etc. only as leaf closers after structure is exposed
+- if a hard sublemma is the blocker, isolate that sublemma and localize sorry there rather than replacing the whole proof by sorry
+
+If a theorem cannot be completed under the proof budget:
+- keep the theorem statement
+- keep the best partial proof skeleton
+- localize sorry narrowly
+- mark proof_status = "incomplete"
+- include proof_notes explaining the blocker
+
+PROOF ORDERING
+
+Within a function, prove in this order:
+1. helper predicates and support lemmas
+2. shape/range/basic invariant theorems
+3. structural preservation theorems
+4. algebraic / monotonic / relational lemmas
+5. reference-implementation agreement or strongest end-to-end theorems
+
+This ordering is designed to maximize final proof coverage without sacrificing statement quality.
+
+OUTPUT SCHEMA
+
+Output one JSON record per function with these exact top-level keys:
+
+{
+  "language": "Python" | "C",
+  "source": string,
+  "lean_translation": string,
+  "tests": string,
+  "lean_tests": string,
+  "nl_properties": [
+    {
+      "id": string,
+      "english_statement": string,
+      "category": string,
+      "preconditions_english": string,
+      "evidence": [string],
+      "why_useful": string,
+      "plausible_wrong_behaviors_ruled_out": [string],
+      "accepted": boolean,
+      "rejection_reason": null | string
+    }
+  ],
+  "theorems": [
+    {
+      "property_id": string,
+      "name": string,
+      "statement": string,
+      "proof": string,
+      "proof_status": "complete" | "incomplete" | "rejected_trivial" | "statement_only",
+      "proof_nontrivial": boolean,
+      "proof_notes": string
+    }
+  ],
+  "translated_deps": [string],
+  "deps_fully_translated": boolean,
+  "axiomatized_deps": [
+    {
+      "name": string,
+      "lean_axiom": string,
+      "reason": string
+    }
+  ],
+  "validation": {
+    "lean_translation_compiles": boolean,
+    "source_tests_pass": boolean,
+    "lean_tests_pass": boolean,
+    "source_lean_agree_on_tests": boolean,
+    "theorem_statements_compile": boolean,
+    "anti_vacuity_checks_passed": boolean,
+    "mutation_checks_summary": string
+  },
+  "claude_provability": {
+    "designated_model": string,
+    "lean_version": string,
+    "proof_budget": string,
+    "function_bucket": "all_proved" | "some_proved" | "none_proved" | "statements_failed",
+    "theorem_results": [
+      {
+        "name": string,
+        "result": "proved" | "not_proved" | "trivial_rejected" | "statement_failed"
+      }
+    ]
+  },
+  "skip_reason": null | string
+}
+
+DATASET SPLITS
+
+Maintain one canonical dataset containing all records and all theorem statements.
+
+Also materialize derived views:
+- all_proved: functions whose accepted theorem statements were all proved nontrivially by the designated Claude prover configuration
+- some_proved: functions with at least one proved nontrivial theorem and at least one unproved theorem
+- none_proved: functions whose theorem statements compile but none were proved nontrivially
+- statements_failed: functions where theorem-statement generation/compilation failed
+
+Important:
+- preserve all theorem statements in every function record
+- do not delete unproved theorems from all_proved or some_proved records
+- theorem success must be evaluated under a pinned prover configuration: exact Claude model, Lean version, temperature, retry count, and time budget
+
+FAILURE HANDLING
+
+If a function is skipped, still emit a record with source, language, and skip_reason.
+If theorem statements are strong but unproved, keep them.
+If proof attempts are shallow or vacuous, reject them and keep the statements.
+If semantics are too subtle to infer reliably, skip rather than hallucinate properties.
+
+FINAL QUALITY BAR
+
+For every accepted function record, ask:
+- Are the natural-language properties genuinely English specifications of the original function?
+- Are they comprehensive across all important correctness dimensions?
+- Are they evidence-based?
+- Are they non-vacuous?
+- Would they fail on plausible wrong implementations?
+- Do the Lean theorem statements faithfully encode those properties?
+- Does the Lean translation match the source behavior?
+- Are the proofs substantive rather than trivial?
+- Are all theorem statements preserved even when proof search fails?
+
+If the answer to any of these is no, revise the record before finalizing it.
