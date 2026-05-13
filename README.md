@@ -1,6 +1,6 @@
 # lean-ebm
 
-Energy-Based Models (EBMs) for Lean 4 formal theorem proving — a Stanford AI for LEAN Club project.
+Energy-Based Models (EBMs) for Lean 4 formal theorem proving — a Stanford Lean Club project.
 
 ## Motivation
 
